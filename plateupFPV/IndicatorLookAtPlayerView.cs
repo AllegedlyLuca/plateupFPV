@@ -27,7 +27,6 @@ namespace KitchenFirstPersonView
             {
                 base.Initialise();
                 _myEntityQuery = GetEntityQuery(new QueryHelper().All(typeof(CFirstPersonIndicator), typeof(CLinkedView)));
-
                 _playerQuery = GetEntityQuery(new QueryHelper().All(typeof(CPlayer), typeof(CPosition)));
             }
 
@@ -77,7 +76,7 @@ namespace KitchenFirstPersonView
                 //if (data.IsFirstPerson)
                 //{
                 //    originalRotation = child.rotation;
-                    child.LookAt(data.PlayerPosition);
+                child.LookAt(data.PlayerPosition);
                 child.Rotate(Vector3.right, -90);
 
                    

@@ -16,6 +16,7 @@ using System.ComponentModel;
 using Unity.Entities.UniversalDelegates;
 using UnityEngine.Rendering;
 using KitchenLib.Preferences;
+using KitchenLib.Logging;
 
 namespace KitchenFirstPersonView
 {
@@ -44,8 +45,6 @@ namespace KitchenFirstPersonView
             {
                 base.Initialise();
 
-                Instance = this;
-
                 Query = GetEntityQuery(typeof(CLinkedView), typeof(CFirstPersonPlayer));
                 localInputSources = new List<int>();
             }
@@ -61,24 +60,9 @@ namespace KitchenFirstPersonView
 
                 using NativeArray<CInputData> inputDataComponent = Query.ToComponentDataArray<CInputData>(Allocator.Temp);
 
-                //  ***************MOVED TO VIEWDATA
-                /*for (var i = 0; i < ents.Length; i++)
-                {
-                    var ent = ents[i];
-                    var my_component = components[i];
-
-                    if (!components[i].IsInitialised)
-                        break;
-                    if (toggleCameraKey.wasPressedThisFrame)
-                    {
-                        my_component.IsActive = !my_component.IsActive;
-                        Set(ent, my_component);
-                    }
-                }*/
-
                 for (var i = 0; i < linkedViews.Length; i++)
                 {
-                    /*if (TryGetSingleton(out SPlayerToToggle sPlayerToToggle))
+                    if (TryGetSingleton(out SPlayerToToggle sPlayerToToggle))
                     {
                         if (sPlayerToToggle.PlayerToToggle == playerComponents[i].ID)
                         {
@@ -90,14 +74,14 @@ namespace KitchenFirstPersonView
                             
                             EntityManager.DestroyEntity(GetSingletonEntity<SPlayerToToggle>());
                         }
-                    }*/
+                    }
 
                     if (playerComponents[i].InputSource == InputSourceIdentifier.Identifier && !localInputSources.Contains(playerComponents[i].InputSource))
                     {
                         localInputSources.Add(playerComponents[i].InputSource);
                     }
 
-                    PreferenceInt fpvEnabledInt = Mod.PrefManager.GetPreference<PreferenceInt>(Mod.FPV_ENABLED_ID);
+                    PreferenceInt fpvEnabledInt = Main.PrefManager.GetPreference<PreferenceInt>(Main.FPV_ENABLED_ID);
                     bool isActive = fpvEnabledInt.Get() == 1;
                     CFirstPersonPlayer cFirstPersonPlayer = firstPersonPlayerComponents[i];
                     cFirstPersonPlayer.IsActive = isActive;
@@ -125,10 +109,9 @@ namespace KitchenFirstPersonView
                     if (ApplyUpdates(view.Identifier, PerformUpdateWithResponse, only_final_update: true))
                     {
                         // Do something if at least one ResponseData packet was processed this frame for the specified view
-                        Mod.LogInfo("Received some data!");
+                        FPVLogger.Log("Received some data!");
                     }
                 }
-
             }
 
             private void PerformUpdateWithResponse(ResponseData data)
@@ -147,20 +130,20 @@ namespace KitchenFirstPersonView
                 {
                     Entity ent = entities[i];
                     CPlayer player = playerComponents[i];
-                    CFirstPersonPlayer fpp = fppComponents[i];
+                    CFirstPersonPlayer FirstPersonPerspective = fppComponents[i];
 
                     if (player.InputSource != data.Source)
                         continue;
 
-                    fpp.IsInitialised = data.IsInitialised;
-                    fpp.IsActive = data.IsActive;
-                    Set(ent, fpp);
+                    FirstPersonPerspective.IsInitialised = data.IsInitialised;
+                    FirstPersonPerspective.IsActive = data.IsActive;
+                    Set(ent, FirstPersonPerspective);
                     break;
                 }
                 return;
             }
 
-            /*public static void CreatePlayerToToggleSingleton(int playerID)
+            public static void CreatePlayerToToggleSingleton(int playerID)
             {
                 var sPlayerToToggle = new SPlayerToToggle()
                 {
@@ -169,7 +152,7 @@ namespace KitchenFirstPersonView
                 Entity entity = Instance.Set(sPlayerToToggle);
 
                 Instance.Set<CDoNotPersist>(entity);
-            }*/
+            }
         }
 
         [MessagePackObject(false)]
@@ -184,28 +167,26 @@ namespace KitchenFirstPersonView
 
             public IUpdatableObject GetRelevantSubview(IObjectView view)
             {
-                GameObject gO = view.GameObject;
+                GameObject GameObjectVar = view.GameObject;
 
-                if (gO == null)
+                if (GameObjectVar == null)
                 {
-                    Mod.LogError("GameObject to add FirstPersonPlayerView subview does not exist");
+                    FPVLogger.Log(2, "GameObject to add FirstPersonPlayerView subview does not exist.");
                     return null;
                 }
-                if (!gO.GetComponent<FirstPersonPlayerView>())
+                if (!GameObjectVar.GetComponent<FirstPersonPlayerView>())
                 {
-                    gO.AddComponent<FirstPersonPlayerView>();
-                    Mod.LogInfo("Added FirstPersonPlayerView");
+                    GameObjectVar.AddComponent<FirstPersonPlayerView>();
+                    FPVLogger.DebugLog("Added FirstPersonPlayerView.");
                 }
                 return view.GetSubView<FirstPersonPlayerView>();
             }
-
 
             public bool IsChangedFrom(ViewData check)
             {
                 return IsActive != check.IsActive || IsInitialised != check.IsInitialised || Source != check.Source || Speed != check.Speed || IsInMenu != check.IsInMenu;
             }
         }
-
 
         // Definition of Message Packet that will be sent back to host via a callback
         // This should contain the minimum amount of data necessary to perform the view's function.
@@ -219,7 +200,6 @@ namespace KitchenFirstPersonView
             [Key(2)] public int Source;
         }
 
-
         // Cached callback to send data back to host.
         // First parameter is the ResponseData instance
         // Second parameter is typeof(ResponseData). This is used to identify the view system that will handle the response
@@ -228,33 +208,19 @@ namespace KitchenFirstPersonView
 
         public FirstPersonPlayerView.ViewData Data;
 
-
-        
         // This runs locally for each client every frame
         public void Update()
         {
+            if(Data == null)
+                return;
+
             if (Data.Source != InputSourceIdentifier.Identifier)
                 return;
 
-
-            // Toggle Active
+            // Toggle Active in preferences
             if (toggleCameraKey.wasPressedThisFrame)
             {
-                /*if (Callback != null)
-                {
-                    Callback.Invoke(new ResponseData
-                    {
-                        IsActive = !Data.IsActive,
-                        IsInitialised = Data.IsInitialised,
-                        Source = Data.Source,
-                    }, typeof(ResponseData));
-                }
-                else
-                {
-                    Mod.LogError("*** CALLBACK IS NULL ***");
-                }*/
-
-                PreferenceInt preferenceInt = Mod.PrefManager.GetPreference<PreferenceInt>(Mod.FPV_ENABLED_ID);
+                PreferenceInt preferenceInt = Main.PrefManager.GetPreference<PreferenceInt>(Main.FPV_ENABLED_ID);
                 if (preferenceInt.Get() == 0)
                 {
                     preferenceInt.Set(1);
@@ -263,13 +229,12 @@ namespace KitchenFirstPersonView
                 {
                     preferenceInt.Set(0);
                 }
-                Mod.PrefManager.Save();
+                Main.PrefManager.Save();
+                FPVLogger.DebugLog(Data.ToString());
             }
 
-
-            PreferenceInt playerModelVisibilityPreference = Mod.PrefManager.GetPreference<PreferenceInt>(Mod.PLAYER_MODEL_VISIBLE_ID);
+            PreferenceInt playerModelVisibilityPreference = Main.PrefManager.GetPreference<PreferenceInt>(Main.PLAYER_MODEL_VISIBLE_ID);
             int playerModelVisibility = playerModelVisibilityPreference.Get();
-
 
             if (!Data.IsActive || Data.IsInMenu)
             {
@@ -279,19 +244,11 @@ namespace KitchenFirstPersonView
             }
 
             // Player Model Visibility
-            if (playerModelVisibility == 0)
-            {
-                transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(false);
-                transform.Find(COSMETICS_PATH).gameObject.SetActive(false);
-            }
-            else
-            {
-                transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(true);
-                transform.Find(COSMETICS_PATH).gameObject.SetActive(true);
-            }
+            transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(!(playerModelVisibility == 0));
+            transform.Find(COSMETICS_PATH).gameObject.SetActive(!(playerModelVisibility == 0));
 
             // FOV
-            PreferenceInt fovPreference = Mod.PrefManager.GetPreference<PreferenceInt>(Mod.FOV_ID);
+            PreferenceInt fovPreference = Main.PrefManager.GetPreference<PreferenceInt>(Main.FOV_ID);
             int fov = fovPreference.Get();
 
             Camera fpvCam = firstPersonCamera.GetComponent<Camera>();
@@ -306,7 +263,6 @@ namespace KitchenFirstPersonView
             Vector3 move = transform.right * movementDir.x + transform.forward * movementDir.y;
             GetComponent<Rigidbody>().AddForce(move * moveSpeed * Data.Speed * Time.deltaTime);
 
-
             // Look movement
             Vector2 looking = lookAction.ReadValue<Vector2>();
             /*float inputDeviceMultiplier = 0f;
@@ -315,7 +271,7 @@ namespace KitchenFirstPersonView
                 inputDeviceMultiplier = 8f;
             }*/
 
-            PreferenceFloat sensitivityFloat = Mod.PrefManager.GetPreference<PreferenceFloat>(Mod.SENSITIVITY_ID);
+            PreferenceFloat sensitivityFloat = Main.PrefManager.GetPreference<PreferenceFloat>(Main.SENSITIVITY_ID);
             float lookSensitivity = sensitivityFloat.Get();
 
             float lookX = looking.x * lookSensitivity * Time.deltaTime;
@@ -328,12 +284,10 @@ namespace KitchenFirstPersonView
 
             transform.Rotate(Vector3.up * lookX);
 
-
             // Hold Point Rotation
             transform.Find(ITEM_HOLDPOINT_PATH).rotation = firstPersonCamera.transform.Find("HoldPoint").rotation;
             transform.Find(ITEM_HOLDPOINT_PATH).position = firstPersonCamera.transform.Find("HoldPoint").position;
         }
-
         
         private GameObject firstPersonCamera = null;
 
@@ -357,23 +311,25 @@ namespace KitchenFirstPersonView
             if (data.Source != InputSourceIdentifier.Identifier)
                 return;
 
-            // Initializing Camera
             if (!data.IsInitialised)
             {
-                // Sets initialise on the component.
-                Callback.Invoke(new ResponseData
+                if(Callback != null)
                 {
-                    IsInitialised = true,
-                    IsActive = data.IsActive,
-                    Source = data.Source,
-                }, typeof(ResponseData));
-
+                    FPVLogger.DebugLog("Initialising camera.");
+                    Callback.Invoke(new ResponseData
+                    {
+                        IsInitialised = true,
+                        IsActive = data.IsActive,
+                        Source = data.Source,
+                    }, typeof(ResponseData));
+                    FPVLogger.DebugLog("Initialisation of camera complete.");
+                }
+                
                 // Camera Setup
-                firstPersonCamera = Instantiate(Mod.Bundle.LoadAsset<GameObject>("FPV Camera"));
+                firstPersonCamera = Instantiate(Main.Bundle.LoadAsset<GameObject>("FPV Camera"));
                 firstPersonCamera.transform.parent = transform;
-                Vector3 pos = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
-                firstPersonCamera.transform.SetPositionAndRotation(pos, transform.rotation);
-
+                Vector3 PlayerPositionAndRotation = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
+                firstPersonCamera.transform.SetPositionAndRotation(PlayerPositionAndRotation, transform.rotation);
 
                 // Input Init
                 foreach (var action in InputSystem.ListEnabledActions())
@@ -385,7 +341,6 @@ namespace KitchenFirstPersonView
                 }
 
                 lookAction = new InputAction("look", InputActionType.Value);
-
                 moveAction = new InputAction("move", InputActionType.Value);
 
                 if (InputSourceIdentifier.DefaultInputSource.GetCurrentController(data.PlayerID) == ControllerType.Keyboard)
@@ -410,12 +365,23 @@ namespace KitchenFirstPersonView
             if (firstPersonCamera == null)
                 return;
 
-
-            
             if (data.IsActive)
             {
-                firstPersonCamera.gameObject.SetActive(true);
+                SetCameraToFirstPerson(true);
+            }
 
+            if (!data.IsActive || data.IsInMenu)
+            {
+                SetCameraToFirstPerson(false);
+            }
+        }
+
+        private void SetCameraToFirstPerson(bool state)
+        {
+            FPVLogger.DebugLog((state ? "Enabling" : "Disabling") + " first-person perspective state.");
+
+            if(state)
+            {
                 moveAction.Enable();
                 lookAction.Enable();
                 foreach (var action in movementAndLookActions)
@@ -424,34 +390,39 @@ namespace KitchenFirstPersonView
                 }
 
                 Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
 
                 Vector3 desiredHoldPointLocalPosition = new Vector3(0f, 0f, 0f);
                 transform.Find(ITEM_HOLDPOINT_PATH).localPosition = desiredHoldPointLocalPosition;
+                Main.FPVCounter++;
+                FPVLogger.DebugLog("View loop count: " + Main.FPVCounter);
             }
-            if (!data.IsActive || data.IsInMenu)
+            else
             {
-                firstPersonCamera.gameObject.SetActive(false);
-
-                moveAction.Disable();
-                lookAction.Disable();
-                foreach (var action in movementAndLookActions)
+                while(Main.FPVCounter != 0)
                 {
-                    action.Enable();
+                    moveAction.Disable();
+                    lookAction.Disable();
+                    foreach (var action in movementAndLookActions)
+                    {
+                        action.Enable();
+                    }
+
+                    Cursor.lockState = CursorLockMode.None;
+
+                    Vector3 origLocalPos = new Vector3(0f, 1.158f, 0.336f);
+                    transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
+
+                    Quaternion origLocalRot = Quaternion.identity;
+                    transform.Find(ITEM_HOLDPOINT_PATH).localRotation = origLocalRot;
+                    FPVLogger.DebugLog("View loop count: " + Main.FPVCounter);
+                    Main.FPVCounter--;
                 }
-
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-
-                Vector3 origLocalPos = new Vector3(0f, 1.158f, 0.336f);
-                transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
-
-                Quaternion origLocalRot = Quaternion.identity;
-                transform.Find(ITEM_HOLDPOINT_PATH).localRotation = origLocalRot;
             }
+
+            Cursor.visible = !state;
+            firstPersonCamera.gameObject.SetActive(state);
+            FPVLogger.DebugLog((state ? "Enabled" : "Disabled") + " first-person perspective state.");
         }
-
-
 
         // This is automatically called after each UpdateData call
         // Hence, this is when Callback is initialized

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FirstPersonView": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

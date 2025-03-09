@@ -1,4 +1,7 @@
-﻿/*using Kitchen;
+﻿/*
+ This is the original code from https://github.com/SpiffySnail/plateupFPV
+ */
+/*using Kitchen;
 using KitchenMods;
 using Unity.Collections;
 using Unity.Entities;
