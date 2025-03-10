@@ -32,7 +32,7 @@ namespace KitchenFirstPersonView
         public static Dictionary<string, int> DefaultValuesDict;
         internal static PreferenceManager PrefManager;
         internal static PreferenceFloat SensitivityPreference = new PreferenceFloat(SENSITIVITY_ID, 5.0f);
-        internal static PreferenceInt FOVPreference = new PreferenceInt(FOV_ID, 70);
+        internal static PreferenceInt FOVPreference = new PreferenceInt(FOV_ID, 65);
         internal static PreferenceInt PlayerModelVisibilityPreference = new PreferenceInt(PLAYER_MODEL_VISIBLE_ID, 0);
         internal static PreferenceInt FPVEnabledPreference = new PreferenceInt(FPV_ENABLED_ID, 0);
 
