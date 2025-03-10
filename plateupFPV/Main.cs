@@ -5,6 +5,7 @@ using KitchenLib.Logging;
 using KitchenLib.Logging.Exceptions;
 using KitchenLib.Preferences;
 using KitchenMods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -19,7 +20,6 @@ namespace KitchenFirstPersonView
         private const string modName = "First Person View";
         private const string author = "AllegedlyLuca";
         private const string modVersion = "0.0.1";
-        private const string betaVersion = "0.0.1";
         private const string compatibleVersions = ">=1.1.4";
 
         #region Preferences
@@ -32,7 +32,7 @@ namespace KitchenFirstPersonView
         public static Dictionary<string, int> DefaultValuesDict;
         internal static PreferenceManager PrefManager;
         internal static PreferenceFloat SensitivityPreference = new PreferenceFloat(SENSITIVITY_ID, 5.0f);
-        internal static PreferenceInt FOVPreference = new PreferenceInt(FOV_ID, 80);
+        internal static PreferenceInt FOVPreference = new PreferenceInt(FOV_ID, 70);
         internal static PreferenceInt PlayerModelVisibilityPreference = new PreferenceInt(PLAYER_MODEL_VISIBLE_ID, 0);
         internal static PreferenceInt FPVEnabledPreference = new PreferenceInt(FPV_ENABLED_ID, 0);
 
@@ -47,7 +47,7 @@ namespace KitchenFirstPersonView
 
         public static AssetBundle Bundle;
 
-        public Main() : base(modID, modName, author, modVersion, betaVersion, compatibleVersions, Assembly.GetExecutingAssembly()) { }
+        public Main() : base(modID, modName, author, modVersion, compatibleVersions, Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise()
         {
