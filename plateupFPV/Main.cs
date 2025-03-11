@@ -1,16 +1,14 @@
 ﻿using Kitchen;
 using KitchenLib;
 using KitchenLib.Event;
-using KitchenLib.Logging;
 using KitchenLib.Logging.Exceptions;
 using KitchenLib.Preferences;
 using KitchenMods;
-using System;
+using PreferenceSystem;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.Networking.Types;
 
 namespace KitchenFirstPersonView
 {
@@ -22,21 +20,14 @@ namespace KitchenFirstPersonView
         private const string modVersion = "0.0.1";
         private const string compatibleVersions = ">=1.1.4";
 
-        #region Preferences
-        public const string FOV_ID = "fov";
-        public const string SENSITIVITY_ID = "sensitivity";
-        public const string PLAYER_MODEL_VISIBLE_ID = "playerModelVisible";
-        public const string FPV_ENABLED_ID = "firstPersonCamera";
+        #region PreferenceSystem object and Preference identifiers
+        internal static PreferenceSystemManager PrefManager;
+        internal const string PreferenceIdFirstPersonViewEnabled = "IsFPVEnabled";
+        internal const string PreferenceIdFieldOfView = "PlayerFieldOfView";
+        internal const string PreferenceIdLookSensitivity = "LookSensitivity";
+        internal const string PreferenceIdIsPlayerModelVisible = "IsPlayerModelVisible";
         #endregion
 
-        public static Dictionary<string, int> DefaultValuesDict;
-        internal static PreferenceManager PrefManager;
-        internal static PreferenceFloat SensitivityPreference = new PreferenceFloat(SENSITIVITY_ID, 5.0f);
-        internal static PreferenceInt FOVPreference = new PreferenceInt(FOV_ID, 65);
-        internal static PreferenceInt PlayerModelVisibilityPreference = new PreferenceInt(PLAYER_MODEL_VISIBLE_ID, 0);
-        internal static PreferenceInt FPVEnabledPreference = new PreferenceInt(FPV_ENABLED_ID, 0);
-
-        public static bool IsLoaded = false;
         internal static int FPVCounter = 0;
 
 #if DEBUG
@@ -60,34 +51,47 @@ namespace KitchenFirstPersonView
 
         protected override void OnPostActivate(KitchenMods.Mod mod)
         {
-            if (IsLoaded)
-                return;
-
             new FPVLogger(InitLogger());
-
-            FPVLogger.Log("Registering preferences.");
             Bundle = mod.GetPacks<AssetBundleModPack>().SelectMany(e => e.AssetBundles).First() ?? throw new MissingAssetBundleException(modID);
             RegisterPreferences();
-            FPVLogger.Log("Preference registration complete.");
-            IsLoaded = true;
         }
 
+        /// <summary>
+        /// Registers the mod's preferences with PreferenceSystem.
+        /// </summary>
         private void RegisterPreferences()
         {
-            PrefManager = new PreferenceManager(modID);
+            FPVLogger.Log("Registering preferences.");
+            PrefManager = new PreferenceSystemManager(modID, modName);
 
-            PrefManager.RegisterPreference(SensitivityPreference);
-            PrefManager.RegisterPreference(FOVPreference);
-            PrefManager.RegisterPreference(PlayerModelVisibilityPreference);
-            PrefManager.RegisterPreference(FPVEnabledPreference);
+            PrefManager
+                .AddLabel("Player camera perspective")
+                .AddOption<bool>(PreferenceIdFirstPersonViewEnabled, false,
+                    [false, true],
+                    ["Third-person (default)", "First-person"]);
 
-            PrefManager.Load();
+            PrefManager
+                .AddLabel("Field of View")
+                .AddInfo("How wide or narrow the camera perspective is.")
+                .AddOption<int>(PreferenceIdFieldOfView, 60,
+                    [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110],
+                    ["30", "35", "40", "45", "50", "55", "60 (default)", "65", "70", "75", "80", "85", "90", "95", "100", "105", "110"]);
 
-            ModsPreferencesMenu<PauseMenuAction>.RegisterMenu("First Person View", typeof(FirstPersonViewMenu<PauseMenuAction>), typeof(PauseMenuAction));
+            PrefManager
+                .AddLabel("Look sensitivity")
+                .AddOption<float>(PreferenceIdLookSensitivity, 5f,
+                    [1f, 1.5f, 2f, 2.5f, 3f, 3.5f, 4f, 4.5f, 5f, 5.5f, 6f, 6.5f, 7f, 7.5f, 8f, 8.5f, 9f],
+                    ["1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5 (default)", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9"]);
 
-            Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
-                args.Menus.Add(typeof(FirstPersonViewMenu<PauseMenuAction>), new FirstPersonViewMenu<PauseMenuAction>(args.Container, args.Module_list));
-            };
+            PrefManager
+                .AddLabel("Show player model in first person")
+                .AddOption<bool>(PreferenceIdIsPlayerModelVisible, false,
+                    [false, true],
+                    ["No", "Yes"]);
+
+            PrefManager.RegisterMenu(PreferenceSystemManager.MenuType.PauseMenu);
+
+            FPVLogger.Log("Preference registration complete.");
         }
     }
 }
