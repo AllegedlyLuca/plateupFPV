@@ -6,7 +6,7 @@ First Person View (or FPV) does what it says on the tin—it gives you a first-per
 
 ## What do I need to use this mod?
 
-You will need to use Preference System, and Harmony.
+You will need to use Preference System, KitchenLib, and Harmony.
 
 ## Controls
 

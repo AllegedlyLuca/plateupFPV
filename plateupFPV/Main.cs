@@ -14,7 +14,7 @@ namespace KitchenFirstPersonView
         internal const string modID = "com.allegedlyluca.plateupfpv";
         private const string modName = "First Person View";
         private const string author = "AllegedlyLuca";
-        private const string modVersion = "0.0.1";
+        private const string modVersion = "0.1.0";
         private const string compatibleVersions = ">=1.1.4";
 
         #region PreferenceSystem object and Preference identifiers
