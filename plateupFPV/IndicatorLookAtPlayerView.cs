@@ -67,24 +67,22 @@ namespace KitchenFirstPersonView
         protected override void UpdateData(MyViewData data)
         {
             //this method lets you manipulate the gameobject 
-            
+            // TODO: Get items to actually float above their sources, not a random spot in the sky.
+            bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
             foreach (Transform child in transform)
             {
-                //Quaternion originalRotation = child.rotation;
+                Quaternion originalRotation = child.rotation;
 
-
-                //if (data.IsFirstPerson)
-                //{
-                //    originalRotation = child.rotation;
-                child.LookAt(data.PlayerPosition);
-                child.Rotate(Vector3.right, -90);
-
-                   
-                //}
-                //else
-                //{
-                //    child.rotation = originalRotation;
-                //}
+                if (IsFirstPersonViewEnabled)
+                {
+                    originalRotation = child.rotation;
+                    child.LookAt(data.PlayerPosition);
+                    child.Rotate(Vector3.right, -80f);
+                }
+                else
+                {
+                    child.rotation = originalRotation;
+                }
             }
         }
     }

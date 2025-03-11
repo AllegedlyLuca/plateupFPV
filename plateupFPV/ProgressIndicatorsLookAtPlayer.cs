@@ -24,14 +24,25 @@ namespace KitchenFirstPersonView
         {
             base.Initialise();
             indicators = GetEntityQuery(new QueryHelper()
-                    .All(
+                    .Any(
+                        typeof(CPopup),
+                        typeof(CCardPedestal),
+                        typeof(CCardSetBubble),
+                        typeof(CNewsCards),
+                        typeof(CCardPedestal),
                         typeof(CIndicator),
-                        typeof(CPosition))
+                        typeof(CProgressIndicator),
+                        typeof(CCustomerIndicator),
+                        typeof(CDecorationIndicator),
+                        typeof(CTableSetIndicator),
+                        typeof(CEventIndicator),
+                        typeof(CFranchiseKitchenIndicator)
+                        )
                     .None(
                         typeof(CFirstPersonIndicator)
                     ));
         }
-
+        
         protected override void OnUpdate()
         {
             var indicators = this.indicators.ToEntityArray(Allocator.Temp);
