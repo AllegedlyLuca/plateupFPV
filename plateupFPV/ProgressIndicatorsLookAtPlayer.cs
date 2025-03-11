@@ -1,14 +1,7 @@
 ﻿using Kitchen;
 using KitchenMods;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace KitchenFirstPersonView
 {
@@ -25,18 +18,18 @@ namespace KitchenFirstPersonView
             base.Initialise();
             indicators = GetEntityQuery(new QueryHelper()
                     .Any(
-                        typeof(CPopup),
-                        typeof(CCardPedestal),
-                        typeof(CCardSetBubble),
-                        typeof(CNewsCards),
-                        typeof(CCardPedestal),
-                        typeof(CIndicator),
-                        typeof(CProgressIndicator),
-                        typeof(CCustomerIndicator),
-                        typeof(CDecorationIndicator),
-                        typeof(CTableSetIndicator),
-                        typeof(CEventIndicator),
-                        typeof(CFranchiseKitchenIndicator)
+                        typeof(CIndicator)
+                        ,typeof(CPopup)
+                        ,typeof(CCardPedestal)
+                        ,typeof(CCardSetBubble)
+                        ,typeof(CNewsCards)
+                        ,typeof(CCardPedestal)
+                        ,typeof(CProgressIndicator)
+                        ,typeof(CCustomerIndicator)
+                        ,typeof(CDecorationIndicator)
+                        ,typeof(CTableSetIndicator)
+                        //,typeof(CEventIndicator)
+                        //typeof(CFranchiseKitchenIndicator)
                         )
                     .None(
                         typeof(CFirstPersonIndicator)

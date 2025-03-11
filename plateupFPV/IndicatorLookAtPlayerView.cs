@@ -1,17 +1,8 @@
-﻿using KitchenFirstPersonView;
-using Kitchen;
+﻿using Kitchen;
 using KitchenMods;
 using MessagePack;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Entities.UniversalDelegates;
-using Unity.Mathematics;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace KitchenFirstPersonView 
@@ -66,7 +57,7 @@ namespace KitchenFirstPersonView
 
         protected override void UpdateData(MyViewData data)
         {
-            //this method lets you manipulate the gameobject 
+            // this method lets you manipulate the gameobject 
             // TODO: Get items to actually float above their sources, not a random spot in the sky.
             bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
             foreach (Transform child in transform)
@@ -77,7 +68,8 @@ namespace KitchenFirstPersonView
                 {
                     originalRotation = child.rotation;
                     child.LookAt(data.PlayerPosition);
-                    child.Rotate(Vector3.right, -80f);
+                    child.Rotate(Vector3.right, 80f);
+                    child.Rotate(Vector3.up, 180f);
                 }
                 else
                 {
