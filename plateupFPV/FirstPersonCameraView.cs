@@ -19,7 +19,7 @@ namespace KitchenFirstPersonView
         public bool IsInitialised;
     }
 
-    public struct SPlayerToToggle : IComponentData 
+    public struct SPlayerToToggle : IComponentData
     {
         public int PlayerToToggle;
     }
@@ -28,7 +28,6 @@ namespace KitchenFirstPersonView
     {
         // Paths for player models.
         private const string PLAYER_MODEL_PATH = "MorphmanPlus/Body";
-        private const string PLAYER_MODEL_PATH_NONPLUS = "MorphmanPlus";
         private const string COSMETICS_PATH = "Cosmetics";
         private const string ITEM_HOLDPOINT_PATH = "MorphmanPlus/Hold Points/Item Hold Point";
         private const string HOLDPOINTS_PATH = "MorphmanPlus/Hold Points";
@@ -53,6 +52,8 @@ namespace KitchenFirstPersonView
         // TODO: Work out what this is for.
         private static readonly int NightFade = Shader.PropertyToID("_NightFade");
 
+        internal static EntityQuery CranePlayers;
+
         public class UpdateView : ResponsiveViewSystemBase<ViewData, ResponseData>, IModSystem
         {
             public static UpdateView Instance { get; private set; }
@@ -62,8 +63,10 @@ namespace KitchenFirstPersonView
 
             protected override void Initialise()
             {
+                FPVLogger.DebugLog("Initialising new FirstPersonCameraView instance.");
                 base.Initialise();
                 Query = GetEntityQuery(typeof(CLinkedView), typeof(CFirstPersonPlayer));
+                CranePlayers = GetEntityQuery(new QueryHelper().All(typeof(CIsCraneMode), typeof(CActivatingCraneMode), typeof(CPlayer)));
                 LocalInputSources = new List<int>();
             }
 
@@ -99,18 +102,18 @@ namespace KitchenFirstPersonView
                         LocalInputSources.Add(PlayerComponents[i].InputSource);
                     }
 
-                    PreferenceInt FPVEnabledPrefInt = Main.PrefManager.GetPreference<PreferenceInt>(Main.FPV_ENABLED_ID);
-                    bool IsActive = FPVEnabledPrefInt.Get() == 1;
+                    bool IsActive = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
                     CFirstPersonPlayer cFirstPersonPlayer = FirstPersonPlayerComponents[i];
                     cFirstPersonPlayer.IsActive = IsActive;
                     Set(ents[i], cFirstPersonPlayer);
 
-                    SendUpdate(LinkedViews[i], new ViewData { 
-                        IsActive = FirstPersonPlayerComponents[i].IsActive, 
-                        IsInitialised = FirstPersonPlayerComponents[i].IsInitialised, 
-                        Source = PlayerComponents[i].InputSource, 
-                        Speed = PlayerComponents[i].Speed, 
-                        PlayerID = PlayerComponents[0].ID, 
+                    SendUpdate(LinkedViews[i], new ViewData
+                    {
+                        IsActive = FirstPersonPlayerComponents[i].IsActive,
+                        IsInitialised = FirstPersonPlayerComponents[i].IsInitialised,
+                        Source = PlayerComponents[i].InputSource,
+                        Speed = PlayerComponents[i].Speed,
+                        PlayerID = PlayerComponents[0].ID,
                         IsInMenu = (inputDataComponent[i].State.Request == GameStateRequest.InLocalMenu)
                     });
                 }
@@ -130,6 +133,8 @@ namespace KitchenFirstPersonView
                         FPVLogger.Log("Received some data!");
                     }
                 }
+
+                CranePlayers = GetEntityQuery(new QueryHelper().All(typeof(CIsCraneMode), typeof(CActivatingCraneMode), typeof(CPlayer)));
             }
 
             private void PerformUpdateWithResponse(ResponseData data)
@@ -224,11 +229,10 @@ namespace KitchenFirstPersonView
             [Key(2)] public int Source;
         }
 
-        private EntityQuery PlayersWithoutCraneMode;
-        // This runs locally for each client every frame
+        // This runs locally for each client, every frame
         public void Update()
         {
-            if(Data == null)
+            if (Data == null)
                 return;
 
             if (Data.Source != InputSourceIdentifier.Identifier)
@@ -238,60 +242,57 @@ namespace KitchenFirstPersonView
             {
                 FPVLogger.DebugLog("FirstPersonCameraGameObject is null, reinstancing.");
                 ResetFirstPersonCameraInstance();
-                SetCameraToFirstPerson(false, Data.PlayerID);
+                SetCameraToFirstPerson(false, Data.PlayerID, Data);
+                CheckControls(Data.PlayerID);
+            }
+
+            // If crane mode activated, disable first-person immediately.
+            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
+            bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
+            if (IsPlayerCrane && Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled))
+            {
+                Main.PrefManager.Set<bool>(Main.PreferenceIdFirstPersonViewEnabled, false);
+                SetCameraToFirstPerson(false, Data.PlayerID, Data);
+                return;
             }
 
             // TOOD: Prevent changing into first-person if in crane mode, OR force crane mode to non-crane mode before transitioning.
 
-            // Toggle Active in preferences
-            if (ToggleFirstPersonCameraKey.wasPressedThisFrame)
+            // Toggle Active in preferences and set player visibility
+            if (ToggleFirstPersonCameraKey.wasPressedThisFrame && !IsPlayerCrane)
             {
-                PreferenceInt FPVEnabledPrefInt = Main.PrefManager.GetPreference<PreferenceInt>(Main.FPV_ENABLED_ID);
-                FPVEnabledPrefInt.Set(FPVEnabledPrefInt.Get() == 0 ? 1 : 0);
-                Main.PrefManager.Save();
+                IsFirstPersonViewEnabled = !IsFirstPersonViewEnabled;
+                Main.PrefManager.Set<bool>(Main.PreferenceIdFirstPersonViewEnabled, IsFirstPersonViewEnabled);
             }
 
-            //
-            PreferenceInt playerModelVisibilityPreference = Main.PrefManager.GetPreference<PreferenceInt>(Main.PLAYER_MODEL_VISIBLE_ID);
-            
-            if (playerModelVisibilityPreference == null)
+            // If we're not in first person mode we don't need to do any of this.
+            if (!IsFirstPersonViewEnabled && !ToggleFirstPersonCameraKey.wasPressedThisFrame)
                 return;
 
-            int playerModelVisibility = playerModelVisibilityPreference.Get();
+            if (!Data.IsActive || Data.IsInMenu)
+                return;
 
-            // TODO: Fix hiding/showing of player model when toggling first/third person.
-            //if(transform.Find(PLAYER_MODEL_PATH) == null)
-            //{
-            //    FPVLogger.DebugLog("Transform PLAYER_MODEL_PATH null.  Should not be null.");
-            //    if(transform.Find(PLAYER_MODEL_PATH_NONPLUS) == null)
-            //    {
-            //        FPVLogger.DebugLog("Transform PLAYER_MODEL_PATH_NONPLUS null too.");
-            //    }
-            //    return;
-            //}
+            #region Field of View
+            int FieldOfView = Main.PrefManager.Get<int>(Main.PreferenceIdFieldOfView);
 
-            //if (!Data.IsActive || Data.IsInMenu)
-            //{
-            //    transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(true);
-            //    transform.Find(COSMETICS_PATH).gameObject.SetActive(true);
-            //    return;
-            //}
-
-            // Player Model Visibility
-            //transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(!(playerModelVisibility == 0));
-            //transform.Find(COSMETICS_PATH).gameObject.SetActive(!(playerModelVisibility == 0));
-
-            // Field of View
-            PreferenceInt FieldOfViewPreference = Main.PrefManager.GetPreference<PreferenceInt>(Main.FOV_ID);
-            int FieldOfView = FieldOfViewPreference.Get();
+            SetupFirstPersonCamera();
 
             Camera FirstPersonViewCamera = FirstPersonCameraGameObject.GetComponent<Camera>();
             if (FirstPersonViewCamera != null)
             {
-                FirstPersonViewCamera.fieldOfView = FieldOfView;
+                if (FirstPersonViewCamera.fieldOfView != FieldOfView)
+                {
+                    FPVLogger.Log("Field of view setting changed.  Updating FPV FoV.");
+                    FirstPersonViewCamera.fieldOfView = FieldOfView;
+                }
             }
+            else
+            {
+                FPVLogger.Log("FirstPersonViewCamera object null.");
+            }
+            #endregion
 
-            // Movement
+            #region Movement and looking controls.
             float moveSpeed = 3000f;
             CheckControls(Data.PlayerID);
             Vector2 movementDir = MoveAction.ReadValue<Vector2>().normalized;
@@ -300,16 +301,17 @@ namespace KitchenFirstPersonView
 
             // Looking
             Vector2 looking = LookAction.ReadValue<Vector2>();
-            PreferenceFloat sensitivityFloat = Main.PrefManager.GetPreference<PreferenceFloat>(Main.SENSITIVITY_ID);
-            float lookSensitivity = sensitivityFloat.Get();
-            float lookX = looking.x * lookSensitivity * Time.deltaTime;
-            float lookY = looking.y * lookSensitivity * Time.deltaTime;
+
+            float LookSensitivity = Main.PrefManager.Get<float>(Main.PreferenceIdLookSensitivity);
+            float lookX = looking.x * LookSensitivity * Time.deltaTime;
+            float lookY = looking.y * LookSensitivity * Time.deltaTime;
 
             xRotation -= lookY;
             xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
             FirstPersonCameraGameObject.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
             transform.Rotate(Vector3.up * lookX);
+            #endregion
 
             // Hold Point Rotation
             transform.Find(ITEM_HOLDPOINT_PATH).rotation = FirstPersonCameraGameObject.transform.Find("HoldPoint").rotation;
@@ -329,7 +331,7 @@ namespace KitchenFirstPersonView
 
             if (!data.IsInitialised)
             {
-                if(Callback != null)
+                if (Callback != null)
                 {
                     FPVLogger.DebugLog("Initialising camera.");
                     Callback.Invoke(new ResponseData
@@ -338,32 +340,91 @@ namespace KitchenFirstPersonView
                         IsActive = data.IsActive,
                         Source = data.Source,
                     }, typeof(ResponseData));
+
+                    // Camera Setup
+                    SetupFirstPersonCamera();
+                    CheckControls(data.PlayerID);
                     FPVLogger.DebugLog("Initialisation of camera complete.");
                 }
-
-                // Camera Setup
-                SetupFirstPersonCamera();
-                CheckControls(data.PlayerID);
             }
 
             // Anything below here requires the camera gameobject to not be null to be activated
             if (FirstPersonCameraGameObject == null)
-                return;
+                ResetFirstPersonCameraInstance();
 
             if (data.IsActive)
             {
-                SetCameraToFirstPerson(true, data.PlayerID);
+                SetCameraToFirstPerson(true, data.PlayerID, data);
             }
 
             if (!data.IsActive || data.IsInMenu)
             {
-                SetCameraToFirstPerson(false, data.PlayerID);
+                SetCameraToFirstPerson(false, data.PlayerID, data);
+            }
+        }
+
+        private void SetPlayerModelVisibility(ViewData viewData)
+        {
+            SetPlayerModelVisibility(viewData, false);
+        }
+
+        private void SetPlayerModelVisibility(ViewData viewData, bool ForceModelToVisible)
+        {
+            if(transform.Find(PLAYER_MODEL_PATH) == null)
+            {
+                return;
+            }
+            
+            bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
+            bool IsPlayerModelVisiblePreference = Main.PrefManager.Get<bool>(Main.PreferenceIdIsPlayerModelVisible);
+            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
+            bool ShouldShowModel = true;
+            if(IsFirstPersonViewEnabled == true && IsPlayerModelVisiblePreference == false && Data.IsActive == true && Data.IsInMenu == false)
+            {
+                ShouldShowModel = false;
+            }
+
+            if (ForceModelToVisible == true || IsPlayerCrane)
+                ShouldShowModel = true;
+
+            if(IsPlayerCrane)
+            {
+                transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(false);
+                transform.Find(COSMETICS_PATH).gameObject.SetActive(false);
+            }
+
+            bool IsPlayerModelCurrentlyVisible = transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf;
+            bool ShouldChangeVisibility = transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf != ShouldShowModel;
+
+            //FPVLogger.DebugLog("| \\/ IsPlayerModelCurrentlyVisible: " + IsPlayerModelCurrentlyVisible.ToString());
+            //FPVLogger.DebugLog("|    ShouldChangeVisibility: " + ShouldChangeVisibility.ToString());
+            //FPVLogger.DebugLog("|    ShouldShowModel: " + ShouldShowModel.ToString());
+            //FPVLogger.DebugLog("|    -ForceModelToVisible: " + ForceModelToVisible.ToString());
+            //FPVLogger.DebugLog("|    -IsPlayerCrane: " + IsPlayerCrane.ToString());
+            //FPVLogger.DebugLog("|    -IsFirstPersonViewEnabled: " + IsFirstPersonViewEnabled.ToString());
+            //FPVLogger.DebugLog("|    -IsPlayerModelVisiblePreference: " + IsPlayerModelVisiblePreference.ToString());
+            //FPVLogger.DebugLog("|    -Data.IsActive: " + (Data.IsActive).ToString());
+            //FPVLogger.DebugLog("| /\\ -Data.IsInMenu: " + (Data.IsInMenu).ToString());
+
+            if (!ShouldChangeVisibility)
+                return;
+
+            if (ShouldShowModel)
+            {
+                //FPVLogger.DebugLog("|A^^ Changing player model visibility to " + ShouldShowModel.ToString());
+                transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(true);
+                transform.Find(COSMETICS_PATH).gameObject.SetActive(true);
+            } else
+            {
+                //FPVLogger.DebugLog("|B^^ Changing player model visibility to " + ShouldShowModel.ToString());
+                transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(false);
+                transform.Find(COSMETICS_PATH).gameObject.SetActive(false);
             }
         }
 
         private void CheckControls(int PlayerID)
         {
-            if(MoveAction == null || MoveAction.type == null)
+            if (MoveAction == null || MoveAction.type == null)
             {
                 ConfigureControls(PlayerID);
                 SetupFirstPersonCamera();
@@ -374,7 +435,7 @@ namespace KitchenFirstPersonView
         {
             foreach (var action in InputSystem.ListEnabledActions())
             {
-                if ( (action.name == "Movement" || action.name == "Look") && !movementAndLookActions.Contains(action) )
+                if ((action.name == "Movement" || action.name == "Look") && !movementAndLookActions.Contains(action))
                 {
                     movementAndLookActions.Add(action);
                 }
@@ -401,7 +462,7 @@ namespace KitchenFirstPersonView
             }
         }
 
-        private void  SetupFirstPersonCamera()
+        private void SetupFirstPersonCamera()
         {
             if (FirstPersonCameraGameObject == null)
             {
@@ -417,9 +478,16 @@ namespace KitchenFirstPersonView
             FirstPersonCameraGameObject = Instantiate(Main.Bundle.LoadAsset<GameObject>("FPV Camera"));
         }
 
-        private void SetCameraToFirstPerson(bool state, int PlayerID)
+        private void SetCameraToFirstPerson(bool state, int PlayerID, ViewData viewData)
         {
             CheckControls(PlayerID);
+            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
+            Players players = Players.Main;
+            // Make it impossible to use first-person if in crane mode.
+            FPVLogger.DebugLog("Scene type: " + Kitchen.GameInfo.CurrentScene.ToString());
+            if ((players.Has(PlayerID) && IsPlayerCrane))
+                state = false;
+
             if (state)
             {
                 FPVLogger.DebugLog((state ? "Enabling" : "Disabling") + " first-person perspective state.");
@@ -440,7 +508,7 @@ namespace KitchenFirstPersonView
             }
             else
             {
-                while(Main.FPVCounter != 0)
+                while (Main.FPVCounter != 0)
                 {
                     FPVLogger.DebugLog((state ? "Enabling" : "Disabling") + " first-person perspective state.");
                     MoveAction.Disable();
@@ -452,10 +520,11 @@ namespace KitchenFirstPersonView
 
                     Cursor.lockState = CursorLockMode.None;
 
-                    Vector3 origLocalPos = new Vector3(0f, 1.158f, 0.336f);
-                    transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
+                    FPVLogger.DebugLog("transform.Find(ITEM_HOLDPOINT_PATH): " + transform.Find(ITEM_HOLDPOINT_PATH));
 
+                    Vector3 origLocalPos = new Vector3(0f, 1.158f, 0.336f);
                     Quaternion origLocalRot = Quaternion.identity;
+                    transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
                     transform.Find(ITEM_HOLDPOINT_PATH).localRotation = origLocalRot;
                     FPVLogger.DebugLog("View loop count-: " + Main.FPVCounter);
                     Main.FPVCounter--;
@@ -464,6 +533,11 @@ namespace KitchenFirstPersonView
             }
 
             Cursor.visible = !state;
+            SetPlayerModelVisibility(viewData);
+
+            if (FirstPersonCameraGameObject == null)
+                ResetFirstPersonCameraInstance();
+
             FirstPersonCameraGameObject.gameObject.SetActive(state);
         }
 
