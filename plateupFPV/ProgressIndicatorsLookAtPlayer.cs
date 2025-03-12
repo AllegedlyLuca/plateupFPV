@@ -19,7 +19,7 @@ namespace KitchenFirstPersonView
             indicators = GetEntityQuery(new QueryHelper()
                     .Any(
                         typeof(CIndicator)
-                        ,typeof(CPopup)
+                        //,typeof(CPopup)
                         ,typeof(CCardPedestal)
                         ,typeof(CCardSetBubble)
                         ,typeof(CNewsCards)

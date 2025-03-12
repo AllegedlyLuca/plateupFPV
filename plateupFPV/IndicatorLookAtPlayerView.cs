@@ -40,13 +40,10 @@ namespace KitchenFirstPersonView
         public struct MyViewData : ISpecificViewData, IViewData, IViewResponseData, IViewData.ICheckForChanges<MyViewData>
         {
             [Key(0)] public Vector3 PlayerPosition;
-            //[Key(1)] public bool IsFirstPerson;
 
             public IUpdatableObject GetRelevantSubview(IObjectView view)
             {
                 return view.GameObject.GetComponent<IndicatorLookAtPlayerView>() != null ? view.GameObject.GetComponent<IndicatorLookAtPlayerView>() : view.GameObject.AddComponent<IndicatorLookAtPlayerView>();
-                //if this view component is already on one of your prefabs from your asset bundle, you can just use the built in method
-                // return view.GetSubView<MyView>();
             }
 
             public bool IsChangedFrom(MyViewData check)
@@ -57,7 +54,6 @@ namespace KitchenFirstPersonView
 
         protected override void UpdateData(MyViewData data)
         {
-            // this method lets you manipulate the gameobject 
             // TODO: Get items to actually float above their sources, not a random spot in the sky.
             bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
             foreach (Transform child in transform)
