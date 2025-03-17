@@ -1,11 +1,19 @@
-﻿using Kitchen;
+﻿using Controllers;
+using Kitchen;
 using KitchenLib;
-using KitchenLib.Logging.Exceptions;
 using KitchenMods;
 using PreferenceSystem;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+
+/*
+ * TODO:
+ * - Figure why crane toggles again (object reference error in log).
+ * - fix above.  Priority.
+ * 
+ *
+ */
 
 namespace KitchenFirstPersonView
 {
@@ -23,15 +31,20 @@ namespace KitchenFirstPersonView
         internal const string PreferenceIdFieldOfView = "PlayerFieldOfView";
         internal const string PreferenceIdLookSensitivity = "LookSensitivity";
         internal const string PreferenceIdIsPlayerModelVisible = "IsPlayerModelVisible";
+        internal const string PreferenceIdIsDebugEnabled = "IsDebugEnabled";
         #endregion
 
-        internal static int FPVCounter = 0;
+        internal static int PlayerSource = 0;
+        internal static SourceIdentifier ThisIsMyController;
 
-#if DEBUG
-        public const bool DEBUG_MODE = true;
-#else
-        public const bool DEBUG_MODE = false;
-#endif
+        internal static Camera FirstPersonCameraObject = null;
+        internal static GameObject FirstPersonPlayerGameObject = null;
+
+        internal static int PlayerID = 0;
+        internal static string PlayerUsername = null;
+        internal static string PlayerUsernameIDString = null;
+        internal static bool IsPlayerCrane = false;
+        internal static IDictionary<PlayerInfo, int> LocalPlayers = new Dictionary<PlayerInfo, int>();
 
         public static AssetBundle Bundle;
 
@@ -39,7 +52,13 @@ namespace KitchenFirstPersonView
 
         protected override void OnInitialise()
         {
-            FPVLogger.Log(0, "Initialisation complete!");
+            ManageControls.SetInitialInputSource();
+            FPVLogger.Info("Initialisation complete!");
+            foreach(PlayerInfo player in Players.Main.All())
+            {
+                FPVLogger.Debug("Player initialised: " + player.Username);
+                FPVLogger.Debug("Player ID: " + player.ID);
+            }
         }
 
         protected override void OnUpdate()
@@ -49,7 +68,6 @@ namespace KitchenFirstPersonView
         protected override void OnPostActivate(KitchenMods.Mod mod)
         {
             new FPVLogger(InitLogger());
-            Bundle = mod.GetPacks<AssetBundleModPack>().SelectMany(e => e.AssetBundles).First() ?? throw new MissingAssetBundleException(modID);
             RegisterPreferences();
         }
 
@@ -58,11 +76,12 @@ namespace KitchenFirstPersonView
         /// </summary>
         private void RegisterPreferences()
         {
-            FPVLogger.Log("Registering preferences.");
+            FPVLogger.Info("Registering preferences.");
             PrefManager = new PreferenceSystemManager(modID, modName);
 
             PrefManager
                 .AddLabel("Player camera perspective")
+                .AddInfo("Toggleable via F5 on keyboard only!")
                 .AddOption<bool>(PreferenceIdFirstPersonViewEnabled, false,
                     [false, true],
                     ["Third-person (default)", "First-person"]);
@@ -86,9 +105,36 @@ namespace KitchenFirstPersonView
                     [false, true],
                     ["No", "Yes"]);
 
+            PrefManager
+                .AddLabel("Log debug data")
+                .AddInfo("This generates a lot of log file entries.  Only enable it if you need to.")
+                .AddOption<bool>(PreferenceIdIsDebugEnabled, false,
+                    [false, true],
+                    ["No", "Yes"]);
+
             PrefManager.RegisterMenu(PreferenceSystemManager.MenuType.PauseMenu);
 
-            FPVLogger.Log("Preference registration complete.");
+            FPVLogger.Info("Preference registration complete.");
+        }
+
+        internal static bool IsFirstPersonViewEnabled()
+        {
+            return PrefManager.Get<bool>(PreferenceIdFirstPersonViewEnabled);
+        }
+
+        internal static void SetFirstPersonStateInPreferences(CameraState IntendedState)
+        {
+            if(IntendedState == CameraState.FirstPerson)
+            {
+                PrefManager.Set<bool>(PreferenceIdFirstPersonViewEnabled, true);
+                return;
+            }
+            PrefManager.Set<bool>(PreferenceIdFirstPersonViewEnabled, false);
+        }
+
+        internal static bool IsDebugEnabled()
+        {
+            return PrefManager.Get<bool>(PreferenceIdIsDebugEnabled);
         }
     }
 }

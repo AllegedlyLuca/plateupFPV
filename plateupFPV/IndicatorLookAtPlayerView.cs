@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace KitchenFirstPersonView 
 {
-    public class IndicatorLookAtPlayerView : UpdatableObjectView<IndicatorLookAtPlayerView.MyViewData>
+    public class IndicatorLookAtPlayerView : UpdatableObjectView<IndicatorLookAtPlayerView.IndicatorViewData>
     {
-        public class MyViewSystemBase : IncrementalViewSystemBase<MyViewData>, IModSystem
+        public class MyViewSystemBase : IncrementalViewSystemBase<IndicatorViewData>, IModSystem
         {
             private EntityQuery EntityQuery;
             private EntityQuery PlayerQuery;
@@ -28,48 +28,51 @@ namespace KitchenFirstPersonView
                 using NativeArray<CLinkedView> NativeArray = EntityQuery.ToComponentDataArray<CLinkedView>(Allocator.Temp);
                 using var Components = PlayerQuery.ToComponentDataArray<CPosition>(Allocator.Temp);
 
-
                 for (int i = 0; i < NativeArray.Length; i++)
                 {
-                    SendUpdate(NativeArray[i], new MyViewData { PlayerPosition = Components[0].Position });
+                    SendUpdate(NativeArray[i], new IndicatorViewData { PlayerPosition = Components[0].Position });
                 }
             }
         }
 
         [MessagePackObject]
-        public struct MyViewData : ISpecificViewData, IViewData, IViewResponseData, IViewData.ICheckForChanges<MyViewData>
+        public struct IndicatorViewData : ISpecificViewData, IViewData, IViewResponseData, IViewData.ICheckForChanges<IndicatorViewData>
         {
             [Key(0)] public Vector3 PlayerPosition;
+            [Key(1)] public Quaternion OriginalRotation;
+            [Key(2)] public bool HasOriginalRotation;
 
             public IUpdatableObject GetRelevantSubview(IObjectView view)
             {
                 return view.GameObject.GetComponent<IndicatorLookAtPlayerView>() != null ? view.GameObject.GetComponent<IndicatorLookAtPlayerView>() : view.GameObject.AddComponent<IndicatorLookAtPlayerView>();
             }
 
-            public bool IsChangedFrom(MyViewData check)
+            public bool IsChangedFrom(IndicatorViewData check)
             {
                 return PlayerPosition.x != check.PlayerPosition.x || PlayerPosition.y != check.PlayerPosition.y || PlayerPosition.z != check.PlayerPosition.z;
             }
         }
 
-        protected override void UpdateData(MyViewData data)
+        protected override void UpdateData(IndicatorViewData data)
         {
             // TODO: Get items to actually float above their sources, not a random spot in the sky.
-            bool IsFirstPersonViewEnabled = Main.PrefManager.Get<bool>(Main.PreferenceIdFirstPersonViewEnabled);
             foreach (Transform child in transform)
             {
-                Quaternion originalRotation = child.rotation;
-
-                if (IsFirstPersonViewEnabled)
+                if (!data.HasOriginalRotation)
                 {
-                    originalRotation = child.rotation;
+                    data.OriginalRotation = child.rotation;
+                    data.HasOriginalRotation = true;
+                }
+
+                if (Main.IsFirstPersonViewEnabled())
+                {
                     child.LookAt(data.PlayerPosition);
                     child.Rotate(Vector3.right, 80f);
                     child.Rotate(Vector3.up, 180f);
                 }
                 else
                 {
-                    child.rotation = originalRotation;
+                    child.rotation = data.OriginalRotation;
                 }
             }
         }

@@ -17,20 +17,17 @@ namespace KitchenFirstPersonView
         {
             base.Initialise();
             indicators = GetEntityQuery(new QueryHelper()
+                    .All(
+                        typeof(CIndicator),
+                        typeof(CPosition)
+                    )
                     .Any(
-                        typeof(CIndicator)
-                        //,typeof(CPopup)
-                        ,typeof(CCardPedestal)
-                        ,typeof(CCardSetBubble)
-                        ,typeof(CNewsCards)
-                        ,typeof(CCardPedestal)
-                        ,typeof(CProgressIndicator)
-                        ,typeof(CCustomerIndicator)
-                        ,typeof(CDecorationIndicator)
-                        ,typeof(CTableSetIndicator)
-                        //,typeof(CEventIndicator)
-                        //typeof(CFranchiseKitchenIndicator)
-                        )
+                        typeof(CIndicator),
+                        typeof(CProgressIndicator),
+                        typeof(CCustomerIndicator),
+                        typeof(CDecorationIndicator),
+                        typeof(CTableSetIndicator)
+                    )
                     .None(
                         typeof(CFirstPersonIndicator)
                     ));
