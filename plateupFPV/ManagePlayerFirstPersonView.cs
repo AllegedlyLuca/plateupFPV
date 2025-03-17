@@ -2,7 +2,7 @@
 using KitchenMods;
 using Unity.Entities;
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     public class ManagePlayerFirstPersonView : GenericSystemBase, IModSystem
     {

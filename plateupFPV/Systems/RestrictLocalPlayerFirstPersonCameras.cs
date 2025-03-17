@@ -5,7 +5,7 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace KitchenFirstPersonView.Systems
+namespace FirstPersonView.Systems
 {
     public class RestrictLocalPlayerFirstPersonCameras : GenericSystemBase, IModSystem
     {

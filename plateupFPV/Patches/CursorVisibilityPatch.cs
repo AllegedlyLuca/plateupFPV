@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace KitchenFirstPersonView.Patches
+namespace FirstPersonView.Patches
 {
     [HarmonyPatch(typeof(Controllers.MouseUI))]
     [HarmonyPatch("UpdateMouseVisibility")]

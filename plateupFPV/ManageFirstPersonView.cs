@@ -10,7 +10,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     public struct CFirstPersonPlayer : IModComponent
     {

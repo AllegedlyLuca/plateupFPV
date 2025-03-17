@@ -15,7 +15,7 @@ using UnityEngine;
  *
  */
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     public class Main : BaseMod, IModSystem
     {

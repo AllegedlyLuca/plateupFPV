@@ -8,7 +8,7 @@ using Unity.Entities;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
-namespace KitchenFirstPersonView;
+namespace FirstPersonView;
 public class ManageControls
 {
     // TODO: Figure why this is hard-coded.

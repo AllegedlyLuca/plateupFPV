@@ -3,7 +3,7 @@ using KitchenMods;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     public struct CFirstPersonIndicator : IModComponent
     {

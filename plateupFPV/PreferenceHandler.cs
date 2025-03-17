@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     internal class PreferenceHandler
     {

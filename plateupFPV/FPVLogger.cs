@@ -1,7 +1,7 @@
 ﻿using KitchenLib.Logging;
 using System.Diagnostics;
 
-namespace KitchenFirstPersonView
+namespace FirstPersonView
 {
     class FPVLogger
     {

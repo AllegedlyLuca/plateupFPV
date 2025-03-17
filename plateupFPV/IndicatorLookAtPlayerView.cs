@@ -5,7 +5,7 @@ using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace KitchenFirstPersonView 
+namespace FirstPersonView
 {
     public class IndicatorLookAtPlayerView : UpdatableObjectView<IndicatorLookAtPlayerView.IndicatorViewData>
     {
