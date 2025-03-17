@@ -1,11 +1,7 @@
-﻿using Controllers;
-using Kitchen;
+﻿using Kitchen;
 using KitchenMods;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -25,13 +21,12 @@ namespace KitchenFirstPersonView.Systems
         }
         protected override void OnUpdate()
         {
-            using var ents = Query.ToEntityArray(Allocator.Temp);
-            using var firstPersonPlayerComponents = Query.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
-            using var playerComponents = Query.ToComponentDataArray<CPlayer>(Allocator.Temp);
-
+            using var Entities = Query.ToEntityArray(Allocator.Temp);
+            using var FirstPersonPlayerComponentsArray = Query.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
+            using var PlayerComponents = Query.ToComponentDataArray<CPlayer>(Allocator.Temp);
 
             //Mod.LogWarning("These are players that share InputSource with at least one other player!");
-            foreach (var playerItem in playerComponents
+            foreach (var playerItem in PlayerComponents
                 .Select((item, i) => new {
                     Index = i,
                     Player = item
@@ -41,13 +36,12 @@ namespace KitchenFirstPersonView.Systems
                 .SelectMany(group => group))
             {
                 int index = playerItem.Index;
-                Entity ent = ents[index];
-                CFirstPersonPlayer firstPersonPlayerComponent = firstPersonPlayerComponents[index];
+                Entity ent = Entities[index];
+                CFirstPersonPlayer FirstPersonPlayerComponent = FirstPersonPlayerComponentsArray[index];
 
-                firstPersonPlayerComponent.IsActive = false;
-                Set(ent, firstPersonPlayerComponent);
+                FirstPersonPlayerComponent.IsActive = false;
+                Set(ent, FirstPersonPlayerComponent);
             }
-
 
             /*foreach (var component in playerComponents)
             {
@@ -56,7 +50,6 @@ namespace KitchenFirstPersonView.Systems
                     inputSourceIDs.Add(component.InputSource);
                 }
             }
-
 
             IEnumerable<int> duplicates = inputSourceIDs.GroupBy(x => x)
                                             .SelectMany(g => g.Skip(1));

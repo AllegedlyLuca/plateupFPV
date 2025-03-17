@@ -1,11 +1,5 @@
 ﻿using KitchenLib.Logging;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KitchenFirstPersonView
 {
@@ -27,7 +21,7 @@ namespace KitchenFirstPersonView
         /// </summary>
         /// <param name="type">The type of log we're using.  0 = info, 1 = warning, 2 = error.</param>
         /// <param name="message">The message to be logged.</param>
-        public static void Log(int type, string message)
+        private static void Log(int type, string message)
         {
             switch (type)
             {
@@ -45,54 +39,80 @@ namespace KitchenFirstPersonView
         }
 
         /// <summary>
-        /// Writes a log entry to the output log.
-        /// </summary>
-        /// <param name="type">The type of log we're using.  0 = info, 1 = warning, 2 = error.</param>
-        /// <param name="message">The message to be logged.</param>
-        public static void Log(int type, object message)
-        {
-            Log(type, message.ToString());
-        }
-
-        /// <summary>
-        /// Writes a log entry to the output log.  This variant defaults to info level logging.
+        /// Writes an info-level log entry to the output log.
         /// </summary>
         /// <param name="message">The message to be logged.</param>
-        public static void Log(string message)
+        public static void Info(string message)
         {
             Log(0, message);
         }
 
         /// <summary>
-        /// Writes a log entry to the output log.  This variant defaults to info level logging.
+        /// Writes an info-level log entry to the output log.
         /// </summary>
         /// <param name="message">The message to be logged.</param>
-        public static void Log(object message)
+        public static void Info(object message)
         {
             Log(0, message.ToString());
         }
 
         /// <summary>
-        /// Writes a debug log entry, prefixed with [DEBUG] and a 3-tier method call trace to assist in locating where the call came from.
+        /// Writes a warning-level log entry to the output log.
         /// </summary>
         /// <param name="message">The message to be logged.</param>
-        public static void DebugLog(string message)
+        public static void Warn(string message)
         {
-            if (Main.DEBUG_MODE)
+            Log(1, message);
+        }
+
+        /// <summary>
+        /// Writes a warning-level log entry to the output log.
+        /// </summary>
+        /// <param name="message">The message to be logged.</param>
+        public static void Warn(object message)
+        {
+            Log(1, message.ToString());
+        }
+
+        /// <summary>
+        /// Writes a error-level log entry to the output log.
+        /// </summary>
+        /// <param name="message">The message to be logged.</param>
+        public static void Error(string message)
+        {
+            Log(2, message);
+        }
+
+        /// <summary>
+        /// Writes a error-level log entry to the output log.
+        /// </summary>
+        /// <param name="message">The message to be logged.</param>
+        public static void Error(object message)
+        {
+            Log(2, message.ToString());
+        }
+
+        /// <summary>
+        /// Writes a debug log entry at info level, prefixed with [DEBUG] and a 3-tier method call trace to assist in locating where the call came from.
+        /// </summary>
+        /// <param name="message">The message to be logged.</param>
+        public static void Debug(string message)
+        {
+            if (Main.IsDebugEnabled())
             {
-                Log($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message);
+                Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message);
             }
         }
 
         /// <summary>
-        /// Writes a debug log entry, prefixed with [DEBUG] and a 3-tier method call trace to assist in locating where the call came from.
+        /// Writes a debug log entry at info level, prefixed with [DEBUG] and a 3-tier method call trace to assist in locating where the call came from.
         /// </summary>
         /// <param name="message">The message to be logged.</param>
-        public static void DebugLog(object message)
+        public static void Debug(object message)
         {
-            if (Main.DEBUG_MODE)
+            if (Main.IsDebugEnabled())
             {
-                Log($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message.ToString());
+                Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message.ToString());
             }
         }
 
