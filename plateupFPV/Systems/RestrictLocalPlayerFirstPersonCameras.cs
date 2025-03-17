@@ -13,9 +13,7 @@ namespace FirstPersonView.Systems
         List<int> inputSourceIDs;
         protected override void Initialise()
         {
-            Query = GetEntityQuery(new QueryHelper()
-                .All(
-                    typeof(CFirstPersonPlayer)));
+            Query = GetEntityQuery(new QueryHelper().All(typeof(CFirstPersonPlayer)));
 
             inputSourceIDs = new List<int>();
         }

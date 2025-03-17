@@ -98,7 +98,7 @@ namespace FirstPersonView
         /// <param name="message">The message to be logged.</param>
         public static void Debug(string message)
         {
-            if (PreferenceHandler.IsDebugEnabledSetting())
+            if (PreferenceHandler.GetDebugSetting())
             {
                 Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message);
             }
@@ -110,7 +110,7 @@ namespace FirstPersonView
         /// <param name="message">The message to be logged.</param>
         public static void Debug(object message)
         {
-            if (PreferenceHandler.IsDebugEnabledSetting())
+            if (PreferenceHandler.GetDebugSetting())
             {
                 Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message.ToString());
             }

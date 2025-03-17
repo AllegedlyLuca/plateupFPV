@@ -1,10 +1,4 @@
-﻿using KitchenLib.Preferences;
-using PreferenceSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PreferenceSystem;
 
 namespace FirstPersonView
 {
@@ -23,7 +17,7 @@ namespace FirstPersonView
         /// <summary>
         /// Registers the mod's preferences with PreferenceSystem.
         /// </summary>
-        public static void RegisterPreferences(string modID, string modName)
+        internal static void RegisterPreferences(string modID, string modName)
         {
             if(PreferencesRegistered)
             {
@@ -73,11 +67,19 @@ namespace FirstPersonView
         }
 
         #region First person state
+        /// <summary>
+        /// Determines whether first person mode is enabled or disabled.
+        /// </summary>
+        /// <returns>The state of first person mode.</returns>
         internal static bool GetFirstPersonStateSetting()
         {
             return PrefManager.Get<bool>(PreferenceIdFirstPersonViewState);
         }
 
+        /// <summary>
+        /// Sets the state of first person mode to the given state.
+        /// </summary>
+        /// <param name="IntendedState">The camera state intended.</param>
         internal static void SetFirstPersonStateSetting(CameraState IntendedState)
         {
             PrefManager.Set<bool>(PreferenceIdFirstPersonViewState, IntendedState == CameraState.FirstPerson ? true : false);
@@ -85,6 +87,10 @@ namespace FirstPersonView
         #endregion
 
         #region Field of view
+        /// <summary>
+        /// Returns the current field of view in degrees.
+        /// </summary>
+        /// <returns>Integer value containing field of view in degrees.</returns>
         internal static int GetFieldOfViewSetting()
         {
             return PrefManager.Get<int>(PreferenceIdFieldOfView);
@@ -92,6 +98,10 @@ namespace FirstPersonView
         #endregion
 
         #region Look sensitivity
+        /// <summary>
+        /// Returns the current look sensitivity on a scale between 1 and 10.
+        /// </summary>
+        /// <returns>Float value containing current look sensitivity.</returns>
         internal static float GetLookSensitivitySetting()
         {
             return PrefManager.Get<float>(PreferenceIdLookSensitivity);
@@ -99,18 +109,30 @@ namespace FirstPersonView
         #endregion
 
         #region Body visibility state
+        /// <summary>
+        /// Returns whether the player model is visible in first person or not.
+        /// </summary>
+        /// <returns>Whether the player model is visible in first person or not.</returns>
         internal static BodyState GetBodyVisibilitySetting()
         {
             return PrefManager.Get<bool>(PreferenceIdBodyVisibility) ? BodyState.Displayed : BodyState.Hidden;
         }
 
+        /// <summary>
+        /// Sets whether you should be able to see the player model while in first person.
+        /// </summary>
+        /// <param name="IntendedState">The intended BodyState</param>
         internal static void SetBodyVisibilitySetting(BodyState IntendedState)
         {
             PrefManager.Set<bool>(PreferenceIdBodyVisibility, IntendedState == BodyState.Displayed ? true : false);
         }
         #endregion
 
-        internal static bool IsDebugEnabledSetting()
+        /// <summary>
+        /// Returns whether debug mode is enabled.
+        /// </summary>
+        /// <returns>Boolean value on if debug is enabled (true) or disabled (false).</returns>
+        internal static bool GetDebugSetting()
         {
             return PrefManager.Get<bool>(PreferenceIdIsDebugEnabled);
         }

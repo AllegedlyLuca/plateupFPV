@@ -1,6 +1,7 @@
 ﻿using Kitchen;
 using KitchenMods;
 using Unity.Entities;
+using Unity.Collections;
 
 namespace FirstPersonView
 {
@@ -22,7 +23,7 @@ namespace FirstPersonView
 
         protected override void OnUpdate()
         {
-            using var players = playerQuery.ToEntityArray(Unity.Collections.Allocator.TempJob);
+            using var players = playerQuery.ToEntityArray(Allocator.TempJob);
 
             for (int i = 0; i < players.Length; i++)
             {

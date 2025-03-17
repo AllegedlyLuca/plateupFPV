@@ -2,7 +2,6 @@
 using Kitchen;
 using KitchenLib;
 using KitchenMods;
-using PreferenceSystem;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -45,11 +44,6 @@ namespace FirstPersonView
         {
             ManageControls.SetInitialInputSource();
             FPVLogger.Info("Initialisation complete!");
-            foreach(PlayerInfo player in Players.Main.All())
-            {
-                FPVLogger.Debug("Player initialised: " + player.Username);
-                FPVLogger.Debug("Player ID: " + player.ID);
-            }
         }
 
         protected override void OnUpdate()

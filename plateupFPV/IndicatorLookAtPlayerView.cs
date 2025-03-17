@@ -9,7 +9,7 @@ namespace FirstPersonView
 {
     public class IndicatorLookAtPlayerView : UpdatableObjectView<IndicatorLookAtPlayerView.IndicatorViewData>
     {
-        public class MyViewSystemBase : IncrementalViewSystemBase<IndicatorViewData>, IModSystem
+        public class IndicatorViewObject : IncrementalViewSystemBase<IndicatorViewData>, IModSystem
         {
             private EntityQuery EntityQuery;
             private EntityQuery PlayerQuery;
@@ -25,12 +25,12 @@ namespace FirstPersonView
             {
                 if (EntityQuery.IsEmpty) return;
 
-                using NativeArray<CLinkedView> NativeArray = EntityQuery.ToComponentDataArray<CLinkedView>(Allocator.Temp);
+                using NativeArray<CLinkedView> FirstPersonIndicators = EntityQuery.ToComponentDataArray<CLinkedView>(Allocator.Temp);
                 using var Components = PlayerQuery.ToComponentDataArray<CPosition>(Allocator.Temp);
 
-                for (int i = 0; i < NativeArray.Length; i++)
+                for (int i = 0; i < FirstPersonIndicators.Length; i++)
                 {
-                    SendUpdate(NativeArray[i], new IndicatorViewData { PlayerPosition = Components[0].Position });
+                    SendUpdate(FirstPersonIndicators[i], new IndicatorViewData { PlayerPosition = Components[0].Position });
                 }
             }
         }
@@ -44,7 +44,7 @@ namespace FirstPersonView
 
             public IUpdatableObject GetRelevantSubview(IObjectView view)
             {
-                return view.GameObject.GetComponent<IndicatorLookAtPlayerView>() != null ? view.GameObject.GetComponent<IndicatorLookAtPlayerView>() : view.GameObject.AddComponent<IndicatorLookAtPlayerView>();
+                return view.GameObject.GetComponent<IndicatorLookAtPlayerView>() ?? view.GameObject.AddComponent<IndicatorLookAtPlayerView>();
             }
 
             public bool IsChangedFrom(IndicatorViewData check)

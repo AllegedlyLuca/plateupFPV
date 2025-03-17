@@ -371,7 +371,7 @@ namespace FirstPersonView
                 SetCameraState(CameraState.FirstPerson);
                 if(!ManageControls.AreControlsSetToFirstPerson())
                 {
-                    ManageControls.SetControlState(CameraState.FirstPerson);
+                    ManageControls.SetControlState(ControlState.FirstPerson);
                 }
             }
 
@@ -381,7 +381,7 @@ namespace FirstPersonView
                 SetCameraState(CameraState.ThirdPerson);
                 if (ManageControls.AreControlsSetToFirstPerson())
                 {
-                    ManageControls.SetControlState(CameraState.ThirdPerson);
+                    ManageControls.SetControlState(ControlState.ThirdPerson);
                 }
             }
 
@@ -433,7 +433,7 @@ namespace FirstPersonView
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.FirstPerson);
             SetCameraState(CameraState.FirstPerson);
             HandlePlayerModelVisibility();
-            ManageControls.SetControlState(CameraState.FirstPerson);
+            ManageControls.SetControlState(ControlState.FirstPerson);
             FPVLogger.Info("Enabled first person view.");
         }
 
@@ -447,7 +447,7 @@ namespace FirstPersonView
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
             SetCameraState(CameraState.ThirdPerson);
             HandlePlayerModelVisibility();
-            ManageControls.SetControlState(CameraState.ThirdPerson);
+            ManageControls.SetControlState(ControlState.ThirdPerson);
             FPVLogger.Info("Disabled first person view.");
         }
 
@@ -718,11 +718,11 @@ namespace FirstPersonView
 
                     if (((PlayerView.ViewData)value).PlayerID == player.Value)
                     {
-                        FPVLogger.Info("Found player gameObject with name " + player.Key.Username + " (" + player.Key.ID  + ").");
                         Main.PlayerUsername = player.Key.Username;
                         Main.PlayerID = player.Key.ID;
-                        Main.PlayerUsernameIDString = player.Key.Username + "(" + player.Key.ID + ")";
-                        
+                        Main.PlayerUsernameIDString = player.Key.Username + " (" + player.Key.ID + ")";
+                        FPVLogger.Info("Found player gameObject with name " + Main.PlayerUsernameIDString + ".");
+
                         return playerView.gameObject;
                     }
                 }

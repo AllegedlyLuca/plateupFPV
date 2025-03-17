@@ -1,10 +1,5 @@
 ﻿using Controllers;
-using Kitchen;
-using Kitchen.NetworkSupport;
-using KitchenMods;
-using System;
 using System.Collections.Generic;
-using Unity.Entities;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
@@ -16,12 +11,16 @@ public class ManageControls
     internal static KeyControl BodyToggleFirstPersonCameraKey = Keyboard.current.f6Key;
 
     //internal static List<InputAction>[] movementAndLookActions = [];
-    internal static Dictionary<Int32, List<InputAction>> movementAndLookActions = new Dictionary<Int32, List<InputAction>>();
-    internal static Dictionary<Int32, InputAction> LookAction = new Dictionary<int, InputAction>();
-    internal static Dictionary<Int32, InputAction> MoveAction = new Dictionary<int, InputAction>();
+    internal static Dictionary<int, List<InputAction>> movementAndLookActions = new Dictionary<int, List<InputAction>>();
+    internal static Dictionary<int, InputAction> LookAction = new Dictionary<int, InputAction>();
+    internal static Dictionary<int, InputAction> MoveAction = new Dictionary<int, InputAction>();
     internal static bool LocalControllerAssigned = false;
     private static bool AreControlsEnabled = false;
 
+    /// <summary>
+    /// Returns true if the first person mode key was pressed, and false if not.
+    /// </summary>
+    /// <returns>bool</returns>
     internal static bool WasCameraToggleKeyPressedThisFrame()
     {
         if(CameraToggleFirstPersonCameraKey.wasPressedThisFrame)
@@ -31,6 +30,10 @@ public class ManageControls
         return CameraToggleFirstPersonCameraKey.wasPressedThisFrame;
     }
 
+    /// <summary>
+    /// Returns true if the body visibility toggle key was pressed, and false if not.
+    /// </summary>
+    /// <returns>bool</returns>
     internal static bool WasBodyToggleKeyPressedThisFrame()
     {
         if (BodyToggleFirstPersonCameraKey.wasPressedThisFrame && PreferenceHandler.GetFirstPersonStateSetting())
@@ -40,21 +43,30 @@ public class ManageControls
         return BodyToggleFirstPersonCameraKey.wasPressedThisFrame;
     }
 
+    /// <summary>
+    /// Gets the source identified as the player's input source.
+    /// </summary>
+    /// <returns>The identified SourceIdentifier.</returns>
     internal static SourceIdentifier GetMyControllerIdentifier()
     {
         return Main.ThisIsMyController;
     }
 
+    /// <summary>
+    /// Sets the input source identified during initial configuration.
+    /// </summary>
     internal static void SetInitialInputSource()
     {
         FPVLogger.Debug("Setting initial input source to " + InputSourceIdentifier.Identifier.Value.ToString() + ".");
         Main.ThisIsMyController = InputSourceIdentifier.Identifier;
     }
 
-    private static void ConfigureControls(int PlayerID)
+    /// <summary>
+    /// Configures the controls for the player.
+    /// </summary>
+    private static void ConfigureControls()
     {
-        FPVLogger.Info("Setting up first person controls system for PlayerID " + PlayerID.ToString() + ".");
-        //AssignLocalController();
+        FPVLogger.Info("Setting up first person controls system for " + Main.PlayerUsernameIDString + ".");
         FPVLogger.Info("- Registering move and look input system.");
 
         foreach (var action in InputSystem.ListEnabledActions())
@@ -62,53 +74,53 @@ public class ManageControls
 
             if (action.name == "Movement" || action.name == "Look")
             {
-                if(movementAndLookActions == null)
+                if (movementAndLookActions == null)
                 {
-                    movementAndLookActions = new Dictionary<Int32, List<InputAction>>();
+                    movementAndLookActions = new Dictionary<int, List<InputAction>>();
                 }
 
-                if (!movementAndLookActions.ContainsKey(PlayerID))
+                if (!movementAndLookActions.ContainsKey(Main.PlayerID))
                 {
-                    movementAndLookActions.Add(PlayerID, new List<InputAction>());
+                    movementAndLookActions.Add(Main.PlayerID, new List<InputAction>());
                 }
 
-                if (!movementAndLookActions[PlayerID].Contains(action))
+                if (!movementAndLookActions[Main.PlayerID].Contains(action))
                 {
-                    movementAndLookActions[PlayerID].Add(action);
-                    FPVLogger.Info("- Control registered for " + action.name + " on PlayerID " + PlayerID + ".");
+                    movementAndLookActions[Main.PlayerID].Add(action);
+                    FPVLogger.Info("- Control registered for " + action.name + " on PlayerID " + Main.PlayerID + ".");
                 }
             }
         }
 
         FPVLogger.Info("- Registered move and look input system.");
         FPVLogger.Info("- Registering move and look actions.");
-        MoveAction[PlayerID] = new InputAction("move", InputActionType.Value);
-        LookAction[PlayerID] = new InputAction("look", InputActionType.Value);
+        MoveAction[Main.PlayerID] = new InputAction("move", InputActionType.Value);
+        LookAction[Main.PlayerID] = new InputAction("look", InputActionType.Value);
 
         bool WereControlsRegistered = false;
 
-        if (InputSourceIdentifier.DefaultInputSource.GetCurrentController(PlayerID) == ControllerType.Keyboard)
+        if (InputSourceIdentifier.DefaultInputSource.GetCurrentController(Main.PlayerID) == ControllerType.Keyboard)
         {
-            MoveAction[PlayerID].AddCompositeBinding("Dpad")
+            MoveAction[Main.PlayerID].AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/w")
                 .With("Down", "<Keyboard>/s")
                 .With("Left", "<Keyboard>/a")
                 .With("Right", "<Keyboard>/d");
-            LookAction[PlayerID].AddBinding("<Mouse>/delta");
+            LookAction[Main.PlayerID].AddBinding("<Mouse>/delta");
             FPVLogger.Info("- Registered move and look actions for keyboard.");
             WereControlsRegistered = true;
         }
         else
         {
-            MoveAction[PlayerID].AddBinding("<Gamepad>/leftStick").WithProcessor("stickDeadzone(min=0.4,max=0.5)");
-            LookAction[PlayerID].AddBinding("<Gamepad>/rightStick")
+            MoveAction[Main.PlayerID].AddBinding("<Gamepad>/leftStick").WithProcessor("stickDeadzone(min=0.4,max=0.5)");
+            LookAction[Main.PlayerID].AddBinding("<Gamepad>/rightStick")
                 .WithProcessor("stickDeadzone(min=0.125,max=0.925)")
                 .WithProcessor("scaleVector2(x=50,y=50)");
             FPVLogger.Info("- Registered move and look actions for controller.");
             WereControlsRegistered = true;
         }
 
-        if(!WereControlsRegistered)
+        if (!WereControlsRegistered)
         {
             FPVLogger.Warn("- No control system was registered for first person mode!  You may not be able to control the character in first person if the cause is not identified.");
         }
@@ -116,15 +128,14 @@ public class ManageControls
         FPVLogger.Info("Completed control configuration for first person mode.");
     }
 
-    internal static bool AreControlsSetToFirstPerson()
-    {
-        return AreControlsEnabled;
-    }
-
-    internal static void SetControlState(CameraState IntendedControlState)
+    /// <summary>
+    /// Sets the state of the player's controls to the specified state.
+    /// </summary>
+    /// <param name="IntendedControlState"></param>
+    internal static void SetControlState(ControlState IntendedControlState)
     {
         CheckControlState();
-        if (IntendedControlState == CameraState.FirstPerson)
+        if (IntendedControlState == ControlState.FirstPerson)
         {
             EnableFirstPersonControls();
             return;
@@ -133,21 +144,37 @@ public class ManageControls
         DisableFirstPersonControls();
     }
 
+    /// <summary>
+    /// Determines whether the current control configuration is set to first person or third person.
+    /// </summary>
+    /// <returns>True if controls are in first person mode, false if not.</returns>
+    internal static bool AreControlsSetToFirstPerson()
+    {
+        return AreControlsEnabled;
+    }
+
+    /// <summary>
+    /// Checks if controls are null, and if not checks whether the player's control state has been configured.  If it is not configured, it handles configuration.
+    /// </summary>
     internal static void CheckControlState()
     {
         if (MoveAction == null || LookAction == null || !MoveAction.ContainsKey(Main.PlayerID) || !LookAction.ContainsKey(Main.PlayerID))
         {
-            ConfigureControls(Main.PlayerID);
+            ConfigureControls();
         }
     }
 
+    /// <summary>
+    /// Enables first person mode controls.
+    /// </summary>
     private static void EnableFirstPersonControls()
     {
-        FPVLogger.Info("Enabling first person controls for " + Main.PlayerID + " (" + Main.PlayerUsername + ").");
+        FPVLogger.Info("Enabling first person controls for " + Main.PlayerUsernameIDString + ".");
 
         if(!MoveAction.ContainsKey(Main.PlayerID))
         {
-            FPVLogger.Debug("Controls not found for " + Main.PlayerID);
+            FPVLogger.Error("Controls not found!");
+            return;
         }
 
         MoveAction[Main.PlayerID].Enable();
@@ -157,12 +184,15 @@ public class ManageControls
             action.Disable();
         }
         AreControlsEnabled = true;
-        FPVLogger.Info("Enabled first person controls for " + Main.PlayerID + ".");
+        FPVLogger.Info("Enabled first person controls for " + Main.PlayerUsernameIDString + ".");
     }
 
+    /// <summary>
+    /// Disables first person mode controls.
+    /// </summary>
     private static void DisableFirstPersonControls()
     {
-        FPVLogger.Info("Disabling first person controls for " + Main.PlayerID + ".");
+        FPVLogger.Info("Disabling first person controls for " + Main.PlayerUsernameIDString + ".");
         MoveAction[Main.PlayerID].Disable();
         LookAction[Main.PlayerID].Disable();
         foreach (var action in movementAndLookActions[Main.PlayerID])
@@ -170,6 +200,6 @@ public class ManageControls
             action.Enable();
         }
         AreControlsEnabled = false;
-        FPVLogger.Info("Disabled first person controls for " + Main.PlayerID + ".");
+        FPVLogger.Info("Disabled first person controls for " + Main.PlayerUsernameIDString + ".");
     }
 }
