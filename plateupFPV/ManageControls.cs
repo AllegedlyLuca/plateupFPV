@@ -51,15 +51,6 @@ public class ManageControls
         Main.ThisIsMyController = InputSourceIdentifier.Identifier;
     }
 
-    // TODO: Establish separate query for crane players.
-    //internal static CraneState GetPlayerCraneState()
-    //{
-    //    QueryHelper CranePlayerTypes = new QueryHelper().All(typeof(CIsCraneMode));
-    //    //EntityQuery CranePlayers = GetEntityQuery(CranePlayerTypes);
-
-    //    return CraneState.NotCrane;
-    //}
-
     private static void ConfigureControls(int PlayerID)
     {
         FPVLogger.Info("Setting up first person controls system for PlayerID " + PlayerID.ToString() + ".");

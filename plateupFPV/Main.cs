@@ -25,20 +25,11 @@ namespace KitchenFirstPersonView
         private const string modVersion = "0.1.0";
         private const string compatibleVersions = ">=1.1.4";
 
-        #region PreferenceSystem object and Preference identifiers
-        internal static PreferenceSystemManager PrefManager;
-        internal const string PreferenceIdFirstPersonViewEnabled = "IsFPVEnabled";
-        internal const string PreferenceIdFieldOfView = "PlayerFieldOfView";
-        internal const string PreferenceIdLookSensitivity = "LookSensitivity";
-        internal const string PreferenceIdIsPlayerModelVisible = "IsPlayerModelVisible";
-        internal const string PreferenceIdIsDebugEnabled = "IsDebugEnabled";
-        #endregion
-
         internal static int PlayerSource = 0;
         internal static SourceIdentifier ThisIsMyController;
 
         internal static Camera FirstPersonCameraObject = null;
-        internal static GameObject FirstPersonPlayerGameObject = null;
+        internal static GameObject PlayerGameObject = null;
 
         internal static int PlayerID = 0;
         internal static string PlayerUsername = null;

@@ -41,6 +41,7 @@ namespace KitchenFirstPersonView
         private bool IsCameraFirstPerson = false;
         private bool CameraHasBeenSetup = false;
         private bool IsPlayerMoving = false;
+        private bool FPVDisabledViaMenu = false;
 
         private float CurrentLookVertical = 0f;
 
@@ -100,10 +101,6 @@ namespace KitchenFirstPersonView
                     Set(ents[i], cFirstPersonPlayer);
 
                     bool IsShowingPopup = Popups.ToEntityArray(Allocator.Temp).Length != 0;
-                    if(IsShowingPopup)
-                    {
-                        FPVLogger.Debug("Popup! count: " + (Popups.ToEntityArray(Allocator.Temp).Length != 0));
-                    }
 
                     SendUpdate(LinkedViews[i], new ViewData
                     {
@@ -295,11 +292,18 @@ namespace KitchenFirstPersonView
                 return;
             }
 
-            if (Main.FirstPersonPlayerGameObject == null)
+            GameObject PauseMenuGameObject = GameObject.Find("Player Pause Popup");
+            if(PauseMenuGameObject != null && PauseMenuGameObject.transform.childCount > 0 && PauseMenuGameObject.transform.GetChild(0).gameObject.activeSelf)
+            {
+                // TODO: Better identification of various user interfaces to auto-toggle FPV.
+                //FPVLogger.Debug("Pause menu identified.");
+            }
+
+            if (Main.PlayerGameObject == null)
             {
                 FPVLogger.Warn("FirstPersonPlayerGameObject is not set, attempting to set.");
-                Main.FirstPersonPlayerGameObject = FindPlayerGameObject();
-                if(Main.FirstPersonPlayerGameObject == null)
+                Main.PlayerGameObject = FindPlayerGameObject();
+                if(Main.PlayerGameObject == null)
                 {
                     FPVLogger.Error("FirstPersonPlayerGameObject cannot be found.");
                     return;
@@ -325,8 +329,6 @@ namespace KitchenFirstPersonView
             }
 
             int CranePlayerCount = CranePlayers.ToEntityArray(Allocator.Temp).Length;
-
-
             if(CranePlayerCount != 0)
             {
                 FPVLogger.Debug("Crane count: " + CranePlayers.ToEntityArray(Allocator.Temp).Length);
@@ -343,21 +345,29 @@ namespace KitchenFirstPersonView
                 return;
             }
 
-            if (Data.IsInMenu == true || Data.IsShowingPopup == true)
+            bool IsMenuOrPopup = Data.IsInMenu == true || Data.IsShowingPopup == true;
+            if (IsMenuOrPopup)
             {
                 if (IsCameraFirstPerson)
                 {
-                    FPVLogger.Debug("Game is paused or showing popup, disabling FPV view state only.");
-                    SetCameraState(CameraState.ThirdPerson);
-                    ManageControls.SetControlState(CameraState.ThirdPerson);
+                    FPVLogger.Debug("Game is paused or showing popup, disabling first person.");
+                    FPVDisabledViaMenu = true;
+                    DisableFirstPerson();
                 }
                 return;
             }
 
-            if (Main.IsFirstPersonViewEnabled() && !IsCameraFirstPerson)
+            if(FPVDisabledViaMenu && !IsMenuOrPopup) 
             {
-                FPVLogger.Debug("FPV  is set to enabled but camera state does not match.  Correcting.");
+                FPVLogger.Debug("Game has unpaused, returning to first person.");
+                FPVDisabledViaMenu = false;
+                EnableFirstPerson();
+                return;
+            }
+
             if (PreferenceHandler.GetFirstPersonStateSetting() && !IsCameraFirstPerson)
+            {
+                FPVLogger.Debug("FPV is set to enabled but camera state does not match.  Correcting.");
                 SetCameraState(CameraState.FirstPerson);
                 if(!ManageControls.AreControlsSetToFirstPerson())
                 {
@@ -383,7 +393,7 @@ namespace KitchenFirstPersonView
                 return;
             }
 
-            if (!IsPlayerCrane && ManageControls.WasToggleKeyPressedThisFrame())
+            if (!IsPlayerCrane && ManageControls.WasCameraToggleKeyPressedThisFrame())
             {
                 if (!PreferenceHandler.GetFirstPersonStateSetting())
                 {
@@ -410,7 +420,7 @@ namespace KitchenFirstPersonView
             HandleFirstPersonAnimator();
             HandleFirstPersonHoldPoints();
             HandleFirstPersonSkybox();
-            CheckPlayerModelVisibility();
+            HandlePlayerModelVisibility();
         }
 
         /// <summary>
@@ -422,7 +432,7 @@ namespace KitchenFirstPersonView
             FPVLogger.Debug("<- Routing.");
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.FirstPerson);
             SetCameraState(CameraState.FirstPerson);
-            SetPlayerModelVisibility();
+            HandlePlayerModelVisibility();
             ManageControls.SetControlState(CameraState.FirstPerson);
             FPVLogger.Info("Enabled first person view.");
         }
@@ -436,7 +446,7 @@ namespace KitchenFirstPersonView
             FPVLogger.Debug("<- Routing.");
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
             SetCameraState(CameraState.ThirdPerson);
-            SetPlayerModelVisibility();
+            HandlePlayerModelVisibility();
             ManageControls.SetControlState(CameraState.ThirdPerson);
             FPVLogger.Info("Disabled first person view.");
         }
@@ -451,7 +461,7 @@ namespace KitchenFirstPersonView
             int FieldOfView = PreferenceHandler.GetFieldOfViewSetting(); // Main.PrefManager.Get<int>(Main.PreferenceIdFieldOfView);
             if (Main.FirstPersonCameraObject.fieldOfView != FieldOfView)
             {
-                if(ManageControls.WasToggleKeyPressedThisFrame())
+                if(ManageControls.WasCameraToggleKeyPressedThisFrame())
                 {
                     FPVLogger.Info("Setting first person field of view.");
                 }
@@ -468,10 +478,10 @@ namespace KitchenFirstPersonView
         /// </summary>
         private void HandleFirstPersonMovement()
         {
-            Rigidbody MyBody = Main.FirstPersonPlayerGameObject.GetComponent<Rigidbody>();
+            Rigidbody MyBody = Main.PlayerGameObject.GetComponent<Rigidbody>();
             if(FirstPersonAnimator == null)
             {
-                FirstPersonAnimator = Main.FirstPersonPlayerGameObject.GetComponent<Animator>();
+                FirstPersonAnimator = Main.PlayerGameObject.GetComponent<Animator>();
             }
             float moveSpeed = 3000f;
             float MovementDeadzone = 0.5f;
@@ -482,7 +492,7 @@ namespace KitchenFirstPersonView
 
             if(InputSourceIdentifier.DefaultInputSource.GetCurrentInputData(Main.PlayerID, out var input_state))
             {
-                Transform PlayerPosition = Main.FirstPersonPlayerGameObject.transform;
+                Transform PlayerPosition = Main.PlayerGameObject.transform;
                 Vector3 MovementX = (PlayerPosition.right * MovementDir.x);
                 Vector3 MovementY = (PlayerPosition.forward * MovementDir.y);
                 MovementVector = MovementX + MovementY;
@@ -553,7 +563,7 @@ namespace KitchenFirstPersonView
             CurrentLookVertical -= LookVertical;
             CurrentLookVertical = Mathf.Clamp((CurrentLookVertical - LookVertical), -90f, 90f);
             Main.FirstPersonCameraObject.transform.localRotation = Quaternion.Euler(CurrentLookVertical, 0f, 0f);
-            Main.FirstPersonPlayerGameObject.transform.Rotate(Vector3.up * LookHorizontal);
+            Main.PlayerGameObject.transform.Rotate(Vector3.up * LookHorizontal);
         }
 
         /// <summary>
@@ -571,97 +581,63 @@ namespace KitchenFirstPersonView
         {
             if(Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH) != null && !PreferenceHandler.GetFirstPersonStateSetting())
             {
-                Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).rotation = Main.FirstPersonPlayerGameObject.transform.Find("HoldPoint").rotation;
-                Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).position = Main.FirstPersonPlayerGameObject.transform.Find("HoldPoint").position;
+                Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).rotation = Main.PlayerGameObject.transform.Find("HoldPoint").rotation;
+                Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).position = Main.PlayerGameObject.transform.Find("HoldPoint").position;
             }
         }
 
-        private void CheckPlayerModelVisibility()
+        private void HandlePlayerModelVisibility()
         {
-            if (Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH) == null || Main.FirstPersonPlayerGameObject.transform.Find(COSMETICS_PATH) == null)
+            if (Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH) == null || Main.PlayerGameObject.transform.Find(COSMETICS_PATH) == null)
             {
                 return;
             }
 
-            bool IsPlayerModelVisiblePreference = Main.PrefManager.Get<bool>(Main.PreferenceIdIsPlayerModelVisible);
-
-            if (Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf && !IsPlayerModelVisiblePreference && Main.IsFirstPersonViewEnabled())
+            if (ManageControls.WasBodyToggleKeyPressedThisFrame())
             {
                 BodyState IntendedState = PreferenceHandler.GetBodyVisibilitySetting() == BodyState.Displayed ? BodyState.Hidden : BodyState.Displayed;
                 PreferenceHandler.SetBodyVisibilitySetting(IntendedState);
             }
-        }
 
             bool ShouldPlayerModelBeVisible = (PreferenceHandler.GetBodyVisibilitySetting() == BodyState.Displayed ? true : false) || PreferenceHandler.GetFirstPersonStateSetting() == false;
             bool IsPlayerModelCurrentlyVisible = (Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf == true) || (Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.activeSelf == true);
+            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
+            bool MenuOrPopupVisible = (Data.IsInMenu == true || Data.IsShowingPopup == true);
 
-        private void SetPlayerModelVisibility(bool ForceModelToBeVisible)
-        {
-            if (Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH) == null || Main.FirstPersonPlayerGameObject.transform.Find(COSMETICS_PATH) == null)
-            {
-                return;
-            }
-
-            bool IsPlayerModelCurrentlyVisible = Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf;
-
-            FPVLogger.Info("Determining whether to show player model.");
-            FPVLogger.Debug("The expected values required to HIDE player model are shown in brackets before each option.");
+            bool VisibilityMismatch =
+                (!ShouldPlayerModelBeVisible && IsPlayerModelCurrentlyVisible) ||
+                ((IsPlayerCrane || MenuOrPopupVisible || ShouldPlayerModelBeVisible) && !IsPlayerModelCurrentlyVisible);
 
             if (PreferenceHandler.GetFirstPersonStateSetting() && !ShouldPlayerModelBeVisible && !IsPlayerModelCurrentlyVisible)
-                {
-                    SetPlayerModelVisibilityGameObject(true);
-                }
-                return;
-            }
-
-            bool IsPlayerModelVisiblePreference = Main.PrefManager.Get<bool>(Main.PreferenceIdIsPlayerModelVisible);
-            bool ShouldShowModel = true;
-            bool IsModelCurrentlyVisibile = Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf || Main.FirstPersonPlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.activeSelf;
-
-            FPVLogger.Debug("(true)  IsFirstPersonViewEnabled() = " + Main.IsFirstPersonViewEnabled());
-            FPVLogger.Debug("(false) IsPlayerModelVisiblePreference = " + IsPlayerModelVisiblePreference);
-            FPVLogger.Debug("(false) Data.IsInMenu = " + Data.IsInMenu);
-            FPVLogger.Debug("(false) Data.IsShowingPopup = " + Data.IsShowingPopup);
-            FPVLogger.Debug("(true)  IsModelCurrentlyVisibile = " + IsModelCurrentlyVisibile);
-
-            if (Main.IsFirstPersonViewEnabled() == true && IsPlayerModelVisiblePreference == false && Data.IsInMenu == false && IsModelCurrentlyVisibile == true)
-            {
-                ShouldShowModel = false;
-            }
-
-            bool ShouldChangeVisibility = IsModelCurrentlyVisibile != ShouldShowModel;
-
-            FPVLogger.Debug("(false) ShouldShowModel = " + ShouldShowModel);
-            FPVLogger.Debug("(true)  ShouldChangeVisibility = " + ShouldChangeVisibility);
-
-            if (!ShouldChangeVisibility)
             {
                 return;
             }
 
-            if (ShouldShowModel)
+            FPVLogger.Debug("Bracketed values are required to HIDE the player model.");
+            FPVLogger.Debug("(false) ShouldPlayerModelBeVisible: " + ShouldPlayerModelBeVisible);
+            FPVLogger.Debug("(true)  IsPlayerModelCurrentlyVisible: " + IsPlayerModelCurrentlyVisible);
+            FPVLogger.Debug("(false) IsPlayerCrane: " + IsPlayerCrane);
+            FPVLogger.Debug("(false) MenuOrPopupVisible: " + MenuOrPopupVisible);
+            FPVLogger.Debug("(true)  VisibilityMismatch: " + VisibilityMismatch);
+
+            if (VisibilityMismatch)
             {
-                FPVLogger.Info("Showing player model.");
-                SetPlayerModelVisibilityGameObject(true);
-            }
-            else
-            {
-                FPVLogger.Info("Hiding player model.");
-                SetPlayerModelVisibilityGameObject(false);
+                FPVLogger.Info((IsPlayerModelCurrentlyVisible ? "Showing" : "Hiding" ) + " player model.");
+                SetPlayerModelVisibilityGameObject(!IsPlayerModelCurrentlyVisible);
             }
         }
 
         private void SetPlayerModelVisibilityGameObject(bool Visibility)
         {
             //FPVLogger.Debug("Setting player model visibility to " + Visibility);
-            Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(Visibility);
-            Main.FirstPersonPlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.SetActive(Visibility);
+            Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.SetActive(Visibility);
+            Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.SetActive(Visibility);
         }
 
         private void SetupFirstPersonCamera()
         {
             FPVLogger.Debug("Setting up first person camera.");
-            if (Main.FirstPersonCameraObject == null || Main.FirstPersonPlayerGameObject == null)
+            if (Main.FirstPersonCameraObject == null || Main.PlayerGameObject == null)
             {
                 ResetFirstPersonCameraInstance();
             }
@@ -685,9 +661,9 @@ namespace KitchenFirstPersonView
                 SetupFirstPersonCamera();
             }
 
-            Main.FirstPersonCameraObject.transform.parent = Main.FirstPersonPlayerGameObject.transform;
-            Vector3 PlayerPositionAndRotation = new Vector3(Main.FirstPersonPlayerGameObject.transform.position.x, Main.FirstPersonPlayerGameObject.transform.position.y + 1f, Main.FirstPersonPlayerGameObject.transform.position.z);
-            Main.FirstPersonCameraObject.transform.SetPositionAndRotation(PlayerPositionAndRotation, Main.FirstPersonPlayerGameObject.transform.rotation);
+            Main.FirstPersonCameraObject.transform.parent = Main.PlayerGameObject.transform;
+            Vector3 PlayerPositionAndRotation = new Vector3(Main.PlayerGameObject.transform.position.x, Main.PlayerGameObject.transform.position.y + 1f, Main.PlayerGameObject.transform.position.z);
+            Main.FirstPersonCameraObject.transform.SetPositionAndRotation(PlayerPositionAndRotation, Main.PlayerGameObject.transform.rotation);
         }
 
         private void ResetFirstPersonCameraInstance()
@@ -699,10 +675,10 @@ namespace KitchenFirstPersonView
                 Main.FirstPersonCameraObject = new GameObject("FPV Camera").AddComponent<Camera>();
             }
 
-            if (Main.FirstPersonPlayerGameObject == null)
+            if (Main.PlayerGameObject == null)
             {
                 FPVLogger.Debug("Reinstancing FirstPersonPlayerGameObject.");
-                Main.FirstPersonPlayerGameObject = FindPlayerGameObject();
+                Main.PlayerGameObject = FindPlayerGameObject();
             }
         }
 
@@ -784,15 +760,17 @@ namespace KitchenFirstPersonView
                 FPVLogger.Debug("<- Routing.");
 
                 Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
                 // X = left/right
                 // Y = up/down
                 // Z = front/back
                 Vector3 desiredHoldPointLocalPosition = new Vector3(0f, 0.5f, 0.436f);
-                if(Main.FirstPersonPlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH) != null)
+                if(Main.PlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH) != null)
                 {
-                    Main.FirstPersonPlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localPosition = desiredHoldPointLocalPosition;
+                    Main.PlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localPosition = desiredHoldPointLocalPosition;
                 }
 
+                Main.FirstPersonCameraObject.gameObject.SetActive(true);
                 IsCameraFirstPerson = true;
                 FPVLogger.Info("Enabled first person camera.");
             }
@@ -802,21 +780,20 @@ namespace KitchenFirstPersonView
                 FPVLogger.Debug("<- Routing.");
 
                 Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
 
                 Vector3 origLocalPos = new Vector3(0f, 1.158f, 0.336f);
                 Quaternion origLocalRot = Quaternion.identity;
-                if (Main.FirstPersonPlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH) != null)
+                if (Main.PlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH) != null)
                 {
-                    Main.FirstPersonPlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
-                    Main.FirstPersonPlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localRotation = origLocalRot;
+                    Main.PlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localPosition = origLocalPos;
+                    Main.PlayerGameObject.transform.Find(ITEM_HOLDPOINT_PATH).localRotation = origLocalRot;
                 }
 
-                FPVLogger.Info("Disabled first person camera.");
+                Main.FirstPersonCameraObject.gameObject.SetActive(false);
                 IsCameraFirstPerson = false;
+                FPVLogger.Info("Disabled first person camera.");
             }
-
-            Cursor.visible = IntendedCameraState == CameraState.FirstPerson ? false : true;
-            Main.FirstPersonCameraObject.gameObject.SetActive(!Cursor.visible);
         }
     }
 }
