@@ -608,7 +608,7 @@ namespace KitchenFirstPersonView
                 (!ShouldPlayerModelBeVisible && IsPlayerModelCurrentlyVisible) ||
                 ((IsPlayerCrane || MenuOrPopupVisible || ShouldPlayerModelBeVisible) && !IsPlayerModelCurrentlyVisible);
 
-            if (PreferenceHandler.GetFirstPersonStateSetting() && !ShouldPlayerModelBeVisible && !IsPlayerModelCurrentlyVisible)
+            if (PreferenceHandler.GetFirstPersonStateSetting() && ShouldPlayerModelBeVisible == IsPlayerModelCurrentlyVisible && !ManageControls.WasBodyToggleKeyPressedThisFrame())
             {
                 return;
             }
@@ -622,8 +622,8 @@ namespace KitchenFirstPersonView
 
             if (VisibilityMismatch)
             {
-                FPVLogger.Info((IsPlayerModelCurrentlyVisible ? "Showing" : "Hiding" ) + " player model.");
-                SetPlayerModelVisibilityGameObject(!IsPlayerModelCurrentlyVisible);
+                FPVLogger.Info((ShouldPlayerModelBeVisible ? "Showing" : "Hiding" ) + " player model.");
+                SetPlayerModelVisibilityGameObject(ShouldPlayerModelBeVisible);
             }
         }
 
