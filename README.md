@@ -1,43 +1,66 @@
 # First Person View mod for PlateUp!
 
+This mod, as advertised, gives you a first person mode for PlateUp!, the roguelite game created by It's Happening and Yogscast.  
+
 ## What does this mod do?
 
-First Person View (or FPV) does what it says on the tin—it gives you a first-person perspective in the game.  PlateUp! is a third-person game based on an angled perspective looking into the restaurant.  A first-person view changes how players experience running their restaurants, from how they arrange the place to how they move around it.
+A first-person view changes how players experience running their restaurants, from how they arrange the place to how they move around it.  This mod provides that view, with a few adjustable parameters to help tailor the experience to any player's preference.
 
 ## What do I need to use this mod?
 
-You will need to use Preference System, KitchenLib, and Harmony.
+You will need to use PreferenceSystem, KitchenLib, and HarmonyX.  If you are playing the game via Steam, the Specific Workshop items you will need are as follows: 
+
+* HarmonyX: https://steamcommunity.com/sharedfiles/filedetails/?id=2898033283
+* KitchenLib: https://steamcommunity.com/sharedfiles/filedetails/?id=2898069883
+* PreferenceSystem: https://steamcommunity.com/sharedfiles/filedetails/?id=2949018507
 
 ## Controls
 
-### Keyboard + Mouse
-
+Global:
 * F5: Toggle between first-person and third-person.
-* Move: WASD.
-* Look: Mouse.
+* F6: Toggle player model visibility.
 
-(note: you can also toggle first-person mode via Options->Preference System->First Person View)
+For keyboard and mouse:
+* Move: WASD
+* Look: Mouse
 
-### Controller
+For controllers:
+* Move: Left thumbstick or Dpad.
+* Look: Right thumbstick.
 
-* Move: Left-Stick or D-pad.
-* Look: Right-Stick.
+Note: You can also toggle first person mode via Options->Preference System->First Person View.  There is currently no controller-based toggle binding.
+
+## Installation instructions
+
+Please make sure you have all three of the mods listed above!  Without all three, the game may fail to start.  This mod, currently, does not check whether you have these.  This will be rectified in future.
+
+When this mod is on Steam Workshop, simply subscribe to it (and the other three mods).
+
+If you are installing this mod manually:
+1. Locate your PlateUp installation directory.  This should contain the PlateUp executable.
+2. Go into the `Mods` folder.  If `Mods` does not exist, create it.
+3. Create a folder called `FirstPersonView`.
+4. Create a folder called `content`.
+5. Place `FirstPersonView.dll` in the `content` folder.
+
+Note: All file and directory names are case sensitive.  Ensure folders and files are named exactly as indicated above!
 
 ## Current Features
 
 * First person camera with keyboard + mouse and controller support.
 * Easy toggling of camera perspectives.
 * General multiplayer support.
-* UI pop-ups switch the perspective back to first-person.
-* UI indicators in the world-space face towards the player while in first-person.
+* Some UI pop-ups switch the perspective back to first-person.
+* Some UI indicators in the world-space face towards the player while in first-person.
 * Pops back to third-person when crane mode is activated.
 
 ## Issues
 
-* Some UI indicators do not look at the player in first-person
-* ~~If entering or leaving any scene in first-person, third-person movement controls become inoperative until the game is relaunched.~~
-  * Now only occurs if exiting practice mode, entering any restaurant (including starting a new one), or going from franchise creation to lobby whilst in first person.
-* No local multiplayer support (untested since I started this, but keeping this from previous project page).
+* Most UI indicators do not look at the player in first person.  Those that do, may focus on another player if you are in a multiplayer lobby.
+* Multiplayer specific:
+  * If the lobby host enters crane mode, first person mode is disabled for all players.
+  * If a non-host player enters crane mode, first person does not disable properly.
+* Unconfirmed: A restaurant failing may cause a game crash.
 
 ## Who am I?
 
@@ -49,7 +72,7 @@ This version of the mod is forked from that by quackandcheese, itself based on S
 
 Neither of the original pages I found this mod from indicated anything relating to licensing or attributions, but I'm not an ass.  quack and Spiffy put time into their respective iterations of this mod, and I thank both of them for that and their efforts.
 
-As to licensing of this version—I'd assume either CC0 or some sort of attribution-required license, depending on whether any of Preference System, KitchenLib, or Harmony have any.
+As to licensing of this version—I'd assume either CC0 or some sort of attribution-required license, depending on whether any of PreferenceSystem, KitchenLib, or Harmony have any.
 
 ## See also
 
