@@ -98,7 +98,7 @@ namespace KitchenFirstPersonView
         /// <param name="message">The message to be logged.</param>
         public static void Debug(string message)
         {
-            if (Main.IsDebugEnabled())
+            if (PreferenceHandler.IsDebugEnabledSetting())
             {
                 Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message);
             }
@@ -110,7 +110,7 @@ namespace KitchenFirstPersonView
         /// <param name="message">The message to be logged.</param>
         public static void Debug(object message)
         {
-            if (Main.IsDebugEnabled())
+            if (PreferenceHandler.IsDebugEnabledSetting())
             {
                 Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message.ToString());
             }

@@ -12,7 +12,8 @@ namespace KitchenFirstPersonView;
 public class ManageControls
 {
     // TODO: Figure why this is hard-coded.
-    internal static KeyControl ToggleFirstPersonCameraKey = Keyboard.current.f5Key;
+    internal static KeyControl CameraToggleFirstPersonCameraKey = Keyboard.current.f5Key;
+    internal static KeyControl BodyToggleFirstPersonCameraKey = Keyboard.current.f6Key;
 
     //internal static List<InputAction>[] movementAndLookActions = [];
     internal static Dictionary<Int32, List<InputAction>> movementAndLookActions = new Dictionary<Int32, List<InputAction>>();
@@ -21,14 +22,22 @@ public class ManageControls
     internal static bool LocalControllerAssigned = false;
     private static bool AreControlsEnabled = false;
 
-    internal static bool WasToggleKeyPressedThisFrame()
+    internal static bool WasCameraToggleKeyPressedThisFrame()
     {
-        if(ToggleFirstPersonCameraKey.wasPressedThisFrame)
+        if(CameraToggleFirstPersonCameraKey.wasPressedThisFrame)
         {
-            FPVLogger.Info("Toggle key pressed. " + ToggleFirstPersonCameraKey.wasPressedThisFrame);
+            FPVLogger.Debug("Camera toggle key pressed.");
         }
+        return CameraToggleFirstPersonCameraKey.wasPressedThisFrame;
+    }
 
-        return ToggleFirstPersonCameraKey.wasPressedThisFrame;
+    internal static bool WasBodyToggleKeyPressedThisFrame()
+    {
+        if (BodyToggleFirstPersonCameraKey.wasPressedThisFrame && PreferenceHandler.GetFirstPersonStateSetting())
+        {
+            FPVLogger.Debug("Body toggle key pressed.");
+        }
+        return BodyToggleFirstPersonCameraKey.wasPressedThisFrame;
     }
 
     internal static SourceIdentifier GetMyControllerIdentifier()

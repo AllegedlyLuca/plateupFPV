@@ -94,7 +94,7 @@ namespace KitchenFirstPersonView
 
                 for (var i = 0; i < LinkedViews.Length; i++)
                 {
-                    bool IsActive = Main.IsFirstPersonViewEnabled();
+                    bool IsActive = PreferenceHandler.GetFirstPersonStateSetting();
                     CFirstPersonPlayer cFirstPersonPlayer = FirstPersonPlayerComponents[i];
                     cFirstPersonPlayer.IsActive = IsActive;
                     Set(ents[i], cFirstPersonPlayer);
@@ -311,7 +311,7 @@ namespace KitchenFirstPersonView
             {
                 FPVLogger.Warn("FirstPersonCameraObject is null, reinstancing.");
                 ResetFirstPersonCameraInstance();
-                if (Main.IsFirstPersonViewEnabled())
+                if (PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     FPVLogger.Debug("Enabling FPV, setting is read as true.");
                     EnableFirstPerson();
@@ -334,7 +334,7 @@ namespace KitchenFirstPersonView
 
             if(Main.LocalPlayers.Count > 1)
             {
-                if(Main.IsFirstPersonViewEnabled())
+                if(PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     FPVLogger.Debug("Local players count is " + Main.LocalPlayers.Count);
                     FPVLogger.Warn("Disabling first person view for all players due to more than one local player being present.");
@@ -357,6 +357,7 @@ namespace KitchenFirstPersonView
             if (Main.IsFirstPersonViewEnabled() && !IsCameraFirstPerson)
             {
                 FPVLogger.Debug("FPV  is set to enabled but camera state does not match.  Correcting.");
+            if (PreferenceHandler.GetFirstPersonStateSetting() && !IsCameraFirstPerson)
                 SetCameraState(CameraState.FirstPerson);
                 if(!ManageControls.AreControlsSetToFirstPerson())
                 {
@@ -364,7 +365,7 @@ namespace KitchenFirstPersonView
                 }
             }
 
-            if (!Main.IsFirstPersonViewEnabled() && IsCameraFirstPerson)
+            if (!PreferenceHandler.GetFirstPersonStateSetting() && IsCameraFirstPerson)
             {
                 FPVLogger.Debug("FPV is set to disabled but camera state does not match.  Correcting.");
                 SetCameraState(CameraState.ThirdPerson);
@@ -375,7 +376,7 @@ namespace KitchenFirstPersonView
             }
 
             bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
-            if (IsPlayerCrane && Main.IsFirstPersonViewEnabled())
+            if (IsPlayerCrane && PreferenceHandler.GetFirstPersonStateSetting())
             {
                 FPVLogger.Debug("Crane mode has been set to true, forcefully disabling first person view.");
                 DisableFirstPerson();
@@ -384,7 +385,7 @@ namespace KitchenFirstPersonView
 
             if (!IsPlayerCrane && ManageControls.WasToggleKeyPressedThisFrame())
             {
-                if (!Main.IsFirstPersonViewEnabled())
+                if (!PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     FPVLogger.Debug("Key pressed to toggle state and crane is not present.  Enabling first person view.");
                     EnableFirstPerson();
@@ -397,7 +398,7 @@ namespace KitchenFirstPersonView
                 return;
             }
 
-            if (!Main.IsFirstPersonViewEnabled() && !ManageControls.WasToggleKeyPressedThisFrame())
+            if (!PreferenceHandler.GetFirstPersonStateSetting() && !ManageControls.WasCameraToggleKeyPressedThisFrame())
             {
                 return;
             }
@@ -419,7 +420,7 @@ namespace KitchenFirstPersonView
         {
             FPVLogger.Info("Enabling first person view.");
             FPVLogger.Debug("<- Routing.");
-            Main.SetFirstPersonStateInPreferences(CameraState.FirstPerson);
+            PreferenceHandler.SetFirstPersonStateSetting(CameraState.FirstPerson);
             SetCameraState(CameraState.FirstPerson);
             SetPlayerModelVisibility();
             ManageControls.SetControlState(CameraState.FirstPerson);
@@ -433,7 +434,7 @@ namespace KitchenFirstPersonView
         {
             FPVLogger.Info("Disabling first person view.");
             FPVLogger.Debug("<- Routing.");
-            Main.SetFirstPersonStateInPreferences(CameraState.ThirdPerson);
+            PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
             SetCameraState(CameraState.ThirdPerson);
             SetPlayerModelVisibility();
             ManageControls.SetControlState(CameraState.ThirdPerson);
@@ -447,7 +448,7 @@ namespace KitchenFirstPersonView
         {
             UpdateCameraPosition();
 
-            int FieldOfView = Main.PrefManager.Get<int>(Main.PreferenceIdFieldOfView);
+            int FieldOfView = PreferenceHandler.GetFieldOfViewSetting(); // Main.PrefManager.Get<int>(Main.PreferenceIdFieldOfView);
             if (Main.FirstPersonCameraObject.fieldOfView != FieldOfView)
             {
                 if(ManageControls.WasToggleKeyPressedThisFrame())
@@ -545,7 +546,7 @@ namespace KitchenFirstPersonView
                 Main.FirstPersonCameraObject.farClipPlane = 3000f;
             }
 
-            float LookSensitivity = Main.PrefManager.Get<float>(Main.PreferenceIdLookSensitivity);
+            float LookSensitivity = PreferenceHandler.GetLookSensitivitySetting();
             float LookHorizontal = looking.x * LookSensitivity * Time.deltaTime;
             float LookVertical = looking.y * LookSensitivity * Time.deltaTime;
 
@@ -568,7 +569,7 @@ namespace KitchenFirstPersonView
         /// </summary>
         private void HandleFirstPersonHoldPoints()
         {
-            if(Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH) != null && !Main.IsFirstPersonViewEnabled())
+            if(Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH) != null && !PreferenceHandler.GetFirstPersonStateSetting())
             {
                 Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).rotation = Main.FirstPersonPlayerGameObject.transform.Find("HoldPoint").rotation;
                 Main.FirstPersonCameraObject.transform.Find(ITEM_HOLDPOINT_PATH).position = Main.FirstPersonPlayerGameObject.transform.Find("HoldPoint").position;
@@ -586,14 +587,13 @@ namespace KitchenFirstPersonView
 
             if (Main.FirstPersonPlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf && !IsPlayerModelVisiblePreference && Main.IsFirstPersonViewEnabled())
             {
-                SetPlayerModelVisibility();
+                BodyState IntendedState = PreferenceHandler.GetBodyVisibilitySetting() == BodyState.Displayed ? BodyState.Hidden : BodyState.Displayed;
+                PreferenceHandler.SetBodyVisibilitySetting(IntendedState);
             }
         }
 
-        private void SetPlayerModelVisibility()
-        {
-            SetPlayerModelVisibility(false);
-        }
+            bool ShouldPlayerModelBeVisible = (PreferenceHandler.GetBodyVisibilitySetting() == BodyState.Displayed ? true : false) || PreferenceHandler.GetFirstPersonStateSetting() == false;
+            bool IsPlayerModelCurrentlyVisible = (Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf == true) || (Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.activeSelf == true);
 
         private void SetPlayerModelVisibility(bool ForceModelToBeVisible)
         {
@@ -607,13 +607,7 @@ namespace KitchenFirstPersonView
             FPVLogger.Info("Determining whether to show player model.");
             FPVLogger.Debug("The expected values required to HIDE player model are shown in brackets before each option.");
 
-            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
-            FPVLogger.Debug("(false) ForceModelToBeVisible = " + ForceModelToBeVisible);
-            FPVLogger.Debug("(false) IsPlayerCrane = " + IsPlayerCrane);
-
-            if (ForceModelToBeVisible == true || IsPlayerCrane == true)
-            {
-                if (!IsPlayerModelCurrentlyVisible)
+            if (PreferenceHandler.GetFirstPersonStateSetting() && !ShouldPlayerModelBeVisible && !IsPlayerModelCurrentlyVisible)
                 {
                     SetPlayerModelVisibilityGameObject(true);
                 }
@@ -775,7 +769,7 @@ namespace KitchenFirstPersonView
             if (IsPlayerCrane)
             {
                 FPVLogger.Debug("Player is crane, forcing state to false (third-person).");
-                Main.PrefManager.Set<bool>(Main.PreferenceIdFirstPersonViewEnabled, false);
+                PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
                 IntendedCameraState = CameraState.ThirdPerson;
             }
 

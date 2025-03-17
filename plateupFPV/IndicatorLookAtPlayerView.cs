@@ -64,7 +64,7 @@ namespace KitchenFirstPersonView
                     data.HasOriginalRotation = true;
                 }
 
-                if (Main.IsFirstPersonViewEnabled())
+                if (PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     child.LookAt(data.PlayerPosition);
                     child.Rotate(Vector3.right, 80f);
