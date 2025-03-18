@@ -37,7 +37,7 @@ namespace FirstPersonView.Systems
                 Entity ent = Entities[index];
                 CFirstPersonPlayer FirstPersonPlayerComponent = FirstPersonPlayerComponentsArray[index];
 
-                FirstPersonPlayerComponent.IsActive = false;
+                FirstPersonPlayerComponent.IsFirstPerson = false;
                 Set(ent, FirstPersonPlayerComponent);
             }
 
@@ -60,7 +60,7 @@ namespace FirstPersonView.Systems
 
                 if (duplicates.Contains(InputSourceIdentifier.Identifier) && playerComponent.InputSource == InputSourceIdentifier.Identifier)
                 {
-                    firstPersonPlayerComponent.IsActive = false;
+                    firstPersonPlayerComponent.IsFirstPerson = false;
                     Set(ent, firstPersonPlayerComponent);
                 }
             }*/

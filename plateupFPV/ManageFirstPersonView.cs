@@ -14,7 +14,7 @@ namespace FirstPersonView
 {
     public struct CFirstPersonPlayer : IModComponent
     {
-        public bool IsActive;
+        public bool IsFirstPerson;
         public bool IsInitialised;
     }
 
@@ -66,7 +66,7 @@ namespace FirstPersonView
         {
             public static UpdateView Instance { get; private set; }
 
-            EntityQuery Query;
+            EntityQuery FirstPersonPlayersQuery;
 
             protected override void Initialise()
             {
@@ -74,37 +74,37 @@ namespace FirstPersonView
                 base.Initialise();
                 Popups = GetEntityQuery(PopupTypes);
                 CranePlayers = GetEntityQuery(CraneTypes);
-                Query = GetEntityQuery(typeof(CLinkedView), typeof(CFirstPersonPlayer));
+                FirstPersonPlayersQuery = GetEntityQuery(typeof(CLinkedView), typeof(CFirstPersonPlayer));
 
             }
 
             protected override void OnUpdate()
             {
-                if (Query.IsEmpty)
+                if (FirstPersonPlayersQuery.IsEmpty)
                     return;
 
-                using NativeArray<CLinkedView> LinkedViews = Query.ToComponentDataArray<CLinkedView>(Allocator.Temp);
-                using NativeArray<CFirstPersonPlayer> FirstPersonPlayerComponents = Query.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
-                using NativeArray<CPlayer> PlayerComponents = Query.ToComponentDataArray<CPlayer>(Allocator.Temp);
-                using var ents = Query.ToEntityArray(Allocator.Temp);
+                using NativeArray<CLinkedView> LinkedViews = FirstPersonPlayersQuery.ToComponentDataArray<CLinkedView>(Allocator.Temp);
+                using NativeArray<CFirstPersonPlayer> FirstPersonPlayerComponents = FirstPersonPlayersQuery.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
+                using NativeArray<CPlayer> PlayerComponents = FirstPersonPlayersQuery.ToComponentDataArray<CPlayer>(Allocator.Temp);
+                using var ents = FirstPersonPlayersQuery.ToEntityArray(Allocator.Temp);
 
-                using NativeArray<CInputData> inputDataComponent = Query.ToComponentDataArray<CInputData>(Allocator.Temp);
+                using NativeArray<CInputData> inputDataComponent = FirstPersonPlayersQuery.ToComponentDataArray<CInputData>(Allocator.Temp);
 
                 Popups = GetEntityQuery(PopupTypes);
                 CranePlayers = GetEntityQuery(CraneTypes);
 
                 for (var i = 0; i < LinkedViews.Length; i++)
                 {
-                    bool IsActive = PreferenceHandler.GetFirstPersonStateSetting();
+                    bool IsFirstPerson = PreferenceHandler.GetFirstPersonStateSetting();
                     CFirstPersonPlayer cFirstPersonPlayer = FirstPersonPlayerComponents[i];
-                    cFirstPersonPlayer.IsActive = IsActive;
+                    cFirstPersonPlayer.IsFirstPerson = IsFirstPerson;
                     Set(ents[i], cFirstPersonPlayer);
 
                     bool IsShowingPopup = Popups.ToEntityArray(Allocator.Temp).Length != 0;
 
                     SendUpdate(LinkedViews[i], new ViewData
                     {
-                        IsActive = FirstPersonPlayerComponents[i].IsActive,
+                        IsFirstPerson = FirstPersonPlayerComponents[i].IsFirstPerson,
                         IsInitialised = FirstPersonPlayerComponents[i].IsInitialised,
                         Source = PlayerComponents[i].InputSource,
                         Speed = PlayerComponents[i].Speed,
@@ -116,7 +116,7 @@ namespace FirstPersonView
 
                 foreach (CLinkedView view in LinkedViews)
                 {
-                    //SendUpdate(view, new ViewData { IsActive = components[0].IsActive, IsInitialised = components[0].IsInitialised, Source = playerComponent[0].InputSource, LookSensitivity = 5.0f, Speed = playerComponent[0].Speed });
+                    //SendUpdate(view, new ViewData { IsFirstPerson = components[0].IsFirstPerson, IsInitialised = components[0].IsInitialised, Source = playerComponent[0].InputSource, LookSensitivity = 5.0f, Speed = playerComponent[0].Speed });
 
                     // protected bool ApplyUpdates(ViewIdentifier identifier, Action<TResp> act, bool only_final_update = false)
                     // As this is a subview, identifier refers to the main view identifier
@@ -136,10 +136,10 @@ namespace FirstPersonView
                 if (data == null)
                     return;
 
-                using NativeArray<CLinkedView> LinkedViews = Query.ToComponentDataArray<CLinkedView>(Allocator.Temp);
-                using NativeArray<CFirstPersonPlayer> FppComponents = Query.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
-                using NativeArray<CPlayer> PlayerComponents = Query.ToComponentDataArray<CPlayer>(Allocator.Temp);
-                using NativeArray<Entity> Entities = Query.ToEntityArray(Allocator.Temp);
+                using NativeArray<CLinkedView> LinkedViews = FirstPersonPlayersQuery.ToComponentDataArray<CLinkedView>(Allocator.Temp);
+                using NativeArray<CFirstPersonPlayer> FppComponents = FirstPersonPlayersQuery.ToComponentDataArray<CFirstPersonPlayer>(Allocator.Temp);
+                using NativeArray<CPlayer> PlayerComponents = FirstPersonPlayersQuery.ToComponentDataArray<CPlayer>(Allocator.Temp);
+                using NativeArray<Entity> FirstPersonEntities = FirstPersonPlayersQuery.ToEntityArray(Allocator.Temp);
 
                 // When Camera is initialised in UpdateData, this is called in callback and sets the component
                 for (int i = 0; i < PlayerComponents.Length; i++)
@@ -149,11 +149,11 @@ namespace FirstPersonView
                         continue;
                     }
 
-                    Entity SelectedEntity = Entities[i];
+                    Entity SelectedEntity = FirstPersonEntities[i];
                     CFirstPersonPlayer FirstPersonPerspective = FppComponents[i];
 
                     FirstPersonPerspective.IsInitialised = data.IsInitialised;
-                    FirstPersonPerspective.IsActive = data.IsActive;
+                    FirstPersonPerspective.IsFirstPerson = data.IsFirstPerson;
                     Set(SelectedEntity, FirstPersonPerspective);
                     break;
                 }
@@ -168,7 +168,7 @@ namespace FirstPersonView
         {
             [Key(0)] public int Source;
             [Key(1)] public bool IsInitialised;
-            [Key(2)] public bool IsActive;
+            [Key(2)] public bool IsFirstPerson;
             [Key(3)] public float Speed;
             [Key(4)] public int PlayerID;
             [Key(5)] public bool IsInMenu;
@@ -200,7 +200,7 @@ namespace FirstPersonView
 
             public bool IsChangedFrom(ViewData check)
             {
-                return IsActive != check.IsActive || IsInitialised != check.IsInitialised || Source != check.Source || Speed != check.Speed || IsInMenu != check.IsInMenu || IsShowingPopup != check.IsShowingPopup;
+                return IsFirstPerson != check.IsFirstPerson || IsInitialised != check.IsInitialised || Source != check.Source || Speed != check.Speed || IsInMenu != check.IsInMenu || IsShowingPopup != check.IsShowingPopup;
             }
         }
 
@@ -211,7 +211,7 @@ namespace FirstPersonView
         [MessagePackObject(false)]
         public class ResponseData : IResponseData, IViewResponseData
         {
-            [Key(0)] public bool IsActive;
+            [Key(0)] public bool IsFirstPerson;
             [Key(1)] public bool IsInitialised;
             [Key(2)] public int Source;
         }
@@ -237,7 +237,7 @@ namespace FirstPersonView
                 Callback.Invoke(new ResponseData
                 {
                     IsInitialised = true,
-                    IsActive = data.IsActive,
+                    IsFirstPerson = data.IsFirstPerson,
                     Source = data.Source,
                 }, typeof(ResponseData));
 

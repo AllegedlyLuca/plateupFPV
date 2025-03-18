@@ -100,7 +100,7 @@ namespace FirstPersonView
         {
             if (PreferenceHandler.GetDebugSetting())
             {
-                Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message);
+                Info($"[DEBUG][{GetMethodStacktrace()}] " + message);
             }
         }
 
@@ -112,7 +112,7 @@ namespace FirstPersonView
         {
             if (PreferenceHandler.GetDebugSetting())
             {
-                Info($"[DEBUG][{GetMethodPathForDebugLogging()}] " + message.ToString());
+                Info($"[DEBUG][{GetMethodStacktrace()}] " + message.ToString());
             }
         }
 
@@ -120,7 +120,7 @@ namespace FirstPersonView
         /// Acquires the method call trace for use in the DebugLog method.
         /// </summary>
         /// <returns>Returns a string concatonation of the method call trace, with a depth of 3 starting at offset 2.</returns>
-        private static string GetMethodPathForDebugLogging()
+        private static string GetMethodStacktrace()
         {
             StackTrace stackTrace = new StackTrace();
             int WorkableFrames = new StackTrace().GetFrames().Length;
