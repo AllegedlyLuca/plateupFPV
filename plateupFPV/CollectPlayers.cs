@@ -5,15 +5,15 @@ using Unity.Collections;
 
 namespace FirstPersonView
 {
-    public class ManagePlayerFirstPersonView : GenericSystemBase, IModSystem
+    public class CollectPlayers : GenericSystemBase, IModSystem
     {
-        private EntityQuery playerQuery;
+        private EntityQuery PlayerQuery;
 
         protected override void Initialise()
         {
             base.Initialise();
 
-            playerQuery = GetEntityQuery(new QueryHelper()
+            PlayerQuery = GetEntityQuery(new QueryHelper()
                 .All(
                     typeof(CPlayer),
                     typeof(CPosition))
@@ -23,13 +23,13 @@ namespace FirstPersonView
 
         protected override void OnUpdate()
         {
-            using var players = playerQuery.ToEntityArray(Allocator.TempJob);
+            using var players = PlayerQuery.ToEntityArray(Allocator.TempJob);
 
             for (int i = 0; i < players.Length; i++)
             {
                 Set(players[i], new CFirstPersonPlayer()
                 {
-                    IsActive = false,
+                    IsFirstPerson = false,
                     IsInitialised = false
                 });
             }
