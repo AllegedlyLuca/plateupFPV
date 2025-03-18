@@ -16,11 +16,9 @@ You will need to use PreferenceSystem, KitchenLib, and HarmonyX.  If you are pla
 
 ## Controls
 
-Global:
+For keyboard and mouse:
 * F5: Toggle between first-person and third-person.
 * F6: Toggle player model visibility.
-
-For keyboard and mouse:
 * Move: WASD
 * Look: Mouse
 
@@ -28,7 +26,7 @@ For controllers:
 * Move: Left thumbstick or Dpad.
 * Look: Right thumbstick.
 
-Note: You can also toggle first person mode via Options->Preference System->First Person View.  There is currently no controller-based toggle binding.
+Note: For controllers, you should toggle first person mode by navigating to Options->Preference System->First Person View.  There are currently no controller-based toggle bindings.
 
 ## Installation instructions
 
@@ -36,7 +34,7 @@ Please make sure you have all three of the mods listed above!  Without all three
 
 When this mod is on Steam Workshop, simply subscribe to it (and the other three mods).
 
-If you are installing this mod manually:
+Manual installation instructions:
 1. Locate your PlateUp installation directory.  This should contain the PlateUp executable.
 2. Go into the `Mods` folder.  If `Mods` does not exist, create it.
 3. Create a folder called `FirstPersonView`.
