@@ -32,7 +32,7 @@ namespace FirstPersonView
                 .AddInfo("Toggleable via F5 on keyboard only!")
                 .AddOption<bool>(PreferenceIdFirstPersonViewState, false,
                     [false, true],
-                    ["Third-person (default)", "First-person"]);
+                    ["Third person (default)", "First person"]);
 
             PrefManager
                 .AddLabel("Field of View")

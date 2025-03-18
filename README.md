@@ -1,14 +1,16 @@
-# First Person View mod for PlateUp!
+﻿# First Person View for PlateUp!
 
 This mod, as advertised, gives you a first person mode for PlateUp!, the roguelite game created by It's Happening and Yogscast.  
 
 ## What does this mod do?
 
-A first-person view changes how players experience running their restaurants, from how they arrange the place to how they move around it.  This mod provides that view, with a few adjustable parameters to help tailor the experience to any player's preference.
+A first person view changes how players experience running their restaurants, from how they arrange the place to how they move around it.  This mod provides that view, with a few adjustable parameters to help tailor the experience to any player's preference.
 
 ## What do I need to use this mod?
 
-You will need to use PreferenceSystem, KitchenLib, and HarmonyX.  If you are playing the game via Steam, the Specific Workshop items you will need are as follows: 
+You will need to use PreferenceSystem, KitchenLib, and HarmonyX.  These are required, not optional.
+
+If you are playing the game via Steam, the specific Steam Workshop items you will need are: 
 
 * HarmonyX: https://steamcommunity.com/sharedfiles/filedetails/?id=2898033283
 * KitchenLib: https://steamcommunity.com/sharedfiles/filedetails/?id=2898069883
@@ -17,7 +19,7 @@ You will need to use PreferenceSystem, KitchenLib, and HarmonyX.  If you are pla
 ## Controls
 
 For keyboard and mouse:
-* F5: Toggle between first-person and third-person.
+* F5: Toggle between first person and third person.
 * F6: Toggle player model visibility.
 * Move: WASD
 * Look: Mouse
@@ -48,8 +50,8 @@ Note: All file and directory names are case sensitive.  Ensure folders and files
 * First person camera with keyboard + mouse and controller support.
 * Easy toggling of camera perspectives.
 * General multiplayer support.
-* Some UI pop-ups switch the perspective back to first-person.
-* Some UI indicators in the world-space face towards the player while in first-person.
+* Some UI pop-ups switch the perspective back to first person.
+* Some UI indicators in the world-space face towards the player while in first person.
 * Pops back to third-person when crane mode is activated.
 
 ## Issues
@@ -66,13 +68,12 @@ I am just a PlateUp! player.  I enjoy the game, and have done for a long time.  
 
 ## Attributions
 
-This version of the mod is forked from that by quackandcheese, itself based on SpiffySnail's code.
+This version of the mod is forked from that by quackandcheese, itself based on SpiffySnail's code.  quack and Spiffy put time into their respective iterations of this mod, and I thank both of them for that and their efforts.
 
-Neither of the original pages I found this mod from indicated anything relating to licensing or attributions, but I'm not an ass.  quack and Spiffy put time into their respective iterations of this mod, and I thank both of them for that and their efforts.
-
-As to licensing of this version�I'd assume either CC0 or some sort of attribution-required license, depending on whether any of PreferenceSystem, KitchenLib, or Harmony have any.
+I was first introduced to the idea of a first person view for PlateUp via the Steam Workshop mod posted by TW年糕醬 (linked below).  This mod linked to Spiffy's source.  TW's mod has distinct differences to this one, namely in that you can cycle tracked players and change to external follow-cams.  I do not plan on adding either of those features to this mod, nor the minimap.
 
 ## See also
 
 * https://github.com/quackandcheese/plateupFPV
 * https://github.com/SpiffySnail/plateupFPV
+* https://steamcommunity.com/sharedfiles/filedetails/?id=3427598725

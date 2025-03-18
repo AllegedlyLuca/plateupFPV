@@ -452,7 +452,7 @@ namespace FirstPersonView
         }
 
         /// <summary>
-        /// Handles the Field of View for the first-person perspective.
+        /// Handles the Field of View for the first person perspective.
         /// </summary>
         private void HandleFirstPersonFieldOfView()
         {
@@ -540,7 +540,7 @@ namespace FirstPersonView
         }
 
         /// <summary>
-        /// Handles first-person view direction (where you are looking) while in first person.
+        /// Handles first person view direction (where you are looking) while in first person.
         /// </summary>
         private void HandleFirstPersonLooking()
         {
@@ -741,7 +741,7 @@ namespace FirstPersonView
             int PlayerID = Main.PlayerID; 
             bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
 
-            // Make it impossible to use first-person if in crane mode.
+            // Make it impossible to use first person if in crane mode.
             if (IsPlayerCrane)
             {
                 FPVLogger.Debug("Player is crane, forcing state to false (third-person).");
