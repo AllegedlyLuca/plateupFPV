@@ -33,7 +33,7 @@ namespace FirstPersonView
         internal static int PlayerID = 0;
         internal static string PlayerUsername = null;
         internal static string PlayerUsernameIDString = null;
-        internal static bool IsPlayerCrane = false;
+        internal static PlayerView LocalPlayerView;
         internal static IDictionary<PlayerInfo, int> LocalPlayers = new Dictionary<PlayerInfo, int>();
 
         public static AssetBundle Bundle;

@@ -40,6 +40,7 @@ namespace FirstPersonView
 
         private bool IsCameraFirstPerson = false;
         private bool CameraHasBeenSetup = false;
+        private bool CameraResetNotProcessed = false;
         private bool IsPlayerMoving = false;
         private bool FPVDisabledViaMenu = false;
 
@@ -52,11 +53,9 @@ namespace FirstPersonView
         private Animator FirstPersonAnimator;
         private int AnimatorMovementKey = Animator.StringToHash("MovementSpeed");
 
-        internal static EntityQuery CranePlayers;
         internal static EntityQuery Popups;
 
         private static QueryHelper PopupTypes = new QueryHelper().Any(typeof(CPopup), typeof(CGenericChoicePopup), typeof(CPopupRecipe));
-        private static QueryHelper CraneTypes = new QueryHelper().All(typeof(CPlayer), typeof(CRequiresView), typeof(CIsCraneMode));
 
         #region Network components
         /// <summary>
@@ -73,7 +72,6 @@ namespace FirstPersonView
                 FPVLogger.Debug("Initialising new FirstPersonCameraView instance.");
                 base.Initialise();
                 Popups = GetEntityQuery(PopupTypes);
-                CranePlayers = GetEntityQuery(CraneTypes);
                 FirstPersonPlayersQuery = GetEntityQuery(typeof(CLinkedView), typeof(CFirstPersonPlayer));
 
             }
@@ -91,7 +89,6 @@ namespace FirstPersonView
                 using NativeArray<CInputData> inputDataComponent = FirstPersonPlayersQuery.ToComponentDataArray<CInputData>(Allocator.Temp);
 
                 Popups = GetEntityQuery(PopupTypes);
-                CranePlayers = GetEntityQuery(CraneTypes);
 
                 for (var i = 0; i < LinkedViews.Length; i++)
                 {
@@ -257,7 +254,6 @@ namespace FirstPersonView
         }
         #endregion
 
-
         private static bool IsSourceMySource(int Source)
         {
             int ControllerIdentifier = ManageControls.GetMyControllerIdentifier().Value;
@@ -299,44 +295,31 @@ namespace FirstPersonView
                 //FPVLogger.Debug("Pause menu identified.");
             }
 
-            if (Main.PlayerGameObject == null)
+            #region Enable or disable FPV
+            if (Main.PlayerGameObject == null || Main.FirstPersonCameraObject == null)
             {
-                FPVLogger.Warn("FirstPersonPlayerGameObject is not set, attempting to set.");
-                Main.PlayerGameObject = FindPlayerGameObject();
-                if(Main.PlayerGameObject == null)
+                if (Main.PlayerGameObject == null)
                 {
-                    FPVLogger.Error("FirstPersonPlayerGameObject cannot be found.");
+                    FPVLogger.Warn("PlayerGameObject is not set.  Attempting to fix.");
+                }
+
+                if (Main.FirstPersonCameraObject == null)
+                {
+                    FPVLogger.Warn("FirstPersonCameraObject is not set.  Attempting to fix.");
+                }
+                
+                ResetFirstPersonCameraInstance();
+                if (Main.PlayerGameObject == null || Main.FirstPersonCameraObject == null)
+                {
+                    FPVLogger.Error("Attempt to reset missing object failed.");
                     return;
                 }
+                FPVLogger.Info("Successfully fixed objects not set.");
             }
 
-            #region Enable or disable FPV
-            if (Main.FirstPersonCameraObject == null)
+            if (Main.LocalPlayers.Count > 1)
             {
-                FPVLogger.Warn("FirstPersonCameraObject is null, reinstancing.");
-                ResetFirstPersonCameraInstance();
                 if (PreferenceHandler.GetFirstPersonStateSetting())
-                {
-                    FPVLogger.Debug("Enabling FPV, setting is read as true.");
-                    EnableFirstPerson();
-                }
-                else
-                {
-                    FPVLogger.Debug("Disabling FPV, setting is read as false.");
-                    DisableFirstPerson();
-                }
-                return;
-            }
-
-            int CranePlayerCount = CranePlayers.ToEntityArray(Allocator.Temp).Length;
-            if(CranePlayerCount != 0)
-            {
-                FPVLogger.Debug("Crane count: " + CranePlayers.ToEntityArray(Allocator.Temp).Length);
-            }
-
-            if(Main.LocalPlayers.Count > 1)
-            {
-                if(PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     FPVLogger.Debug("Local players count is " + Main.LocalPlayers.Count);
                     FPVLogger.Warn("Disabling first person view for all players due to more than one local player being present.");
@@ -357,7 +340,7 @@ namespace FirstPersonView
                 return;
             }
 
-            if(FPVDisabledViaMenu && !IsMenuOrPopup) 
+            if (FPVDisabledViaMenu && !IsMenuOrPopup) 
             {
                 FPVLogger.Debug("Game has unpaused, returning to first person.");
                 FPVDisabledViaMenu = false;
@@ -365,35 +348,20 @@ namespace FirstPersonView
                 return;
             }
 
-            if (PreferenceHandler.GetFirstPersonStateSetting() && !IsCameraFirstPerson)
+            bool IsMyPlayerCraneBool = IsMyPlayerCrane();
+            if(IsMyPlayerCraneBool == true)
             {
-                FPVLogger.Debug("FPV is set to enabled but camera state does not match.  Correcting.");
-                SetCameraState(CameraState.FirstPerson);
-                if(!ManageControls.AreControlsSetToFirstPerson())
+                FPVLogger.Debug("GetFirstPersonStateSetting(): " + PreferenceHandler.GetFirstPersonStateSetting());
+                FPVLogger.Debug("IsCameraFirstPerson: " + IsCameraFirstPerson);
+                if (PreferenceHandler.GetFirstPersonStateSetting() == true || IsCameraFirstPerson == true)
                 {
-                    ManageControls.SetControlState(ControlState.FirstPerson);
+                    FPVLogger.Debug("Player is a crane.  Disabling first person view.");
+                    DisableFirstPerson();
                 }
-            }
-
-            if (!PreferenceHandler.GetFirstPersonStateSetting() && IsCameraFirstPerson)
-            {
-                FPVLogger.Debug("FPV is set to disabled but camera state does not match.  Correcting.");
-                SetCameraState(CameraState.ThirdPerson);
-                if (ManageControls.AreControlsSetToFirstPerson())
-                {
-                    ManageControls.SetControlState(ControlState.ThirdPerson);
-                }
-            }
-
-            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
-            if (IsPlayerCrane && PreferenceHandler.GetFirstPersonStateSetting())
-            {
-                FPVLogger.Debug("Crane mode has been set to true, forcefully disabling first person view.");
-                DisableFirstPerson();
                 return;
             }
 
-            if (!IsPlayerCrane && ManageControls.WasCameraToggleKeyPressedThisFrame())
+            if (!IsMyPlayerCraneBool && ManageControls.WasCameraToggleKeyPressedThisFrame())
             {
                 if (!PreferenceHandler.GetFirstPersonStateSetting())
                 {
@@ -408,12 +376,51 @@ namespace FirstPersonView
                 return;
             }
 
+            if (!PreferenceHandler.GetFirstPersonStateSetting() && IsCameraFirstPerson)
+            {
+                FPVLogger.Debug("FPV is set to disabled but camera state does not match.  Correcting.");
+                SetCameraState(CameraState.ThirdPerson);
+                if (ManageControls.AreControlsSetToFirstPerson())
+                {
+                    ManageControls.SetControlState(ControlState.ThirdPerson);
+                }
+            }
+
+            if (PreferenceHandler.GetFirstPersonStateSetting() && !IsCameraFirstPerson)
+            {
+                FPVLogger.Debug("FPV is set to enabled but camera state does not match.  Correcting.");
+                SetCameraState(CameraState.FirstPerson);
+                if (!ManageControls.AreControlsSetToFirstPerson())
+                {
+                    ManageControls.SetControlState(ControlState.FirstPerson);
+                }
+            }
+
+            if (CameraResetNotProcessed == true)
+            {
+                if (PreferenceHandler.GetFirstPersonStateSetting())
+                {
+                    FPVLogger.Debug("Camera has been reset.  Setting calls to disable FPV.");
+                    EnableFirstPerson();
+                }
+                else
+                {
+                    FPVLogger.Debug("Camera has been reset.  Setting calls to disable FPV.");
+                    DisableFirstPerson();
+                }
+            }
+
             if (!PreferenceHandler.GetFirstPersonStateSetting() && !ManageControls.WasCameraToggleKeyPressedThisFrame())
             {
                 return;
             }
             #endregion
 
+            FirstPersonUpdate();
+        }
+
+        private void FirstPersonUpdate()
+        {
             HandleFirstPersonFieldOfView();
             HandleFirstPersonLooking();
             HandleFirstPersonMovement();
@@ -432,8 +439,9 @@ namespace FirstPersonView
             FPVLogger.Debug("<- Routing.");
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.FirstPerson);
             SetCameraState(CameraState.FirstPerson);
-            HandlePlayerModelVisibility();
             ManageControls.SetControlState(ControlState.FirstPerson);
+            FirstPersonUpdate();
+            CameraResetNotProcessed = false;
             FPVLogger.Info("Enabled first person view.");
         }
 
@@ -448,6 +456,7 @@ namespace FirstPersonView
             SetCameraState(CameraState.ThirdPerson);
             HandlePlayerModelVisibility();
             ManageControls.SetControlState(ControlState.ThirdPerson);
+            CameraResetNotProcessed = false;
             FPVLogger.Info("Disabled first person view.");
         }
 
@@ -601,7 +610,7 @@ namespace FirstPersonView
 
             bool ShouldPlayerModelBeVisible = (PreferenceHandler.GetBodyVisibilitySetting() == BodyState.Displayed ? true : false) || PreferenceHandler.GetFirstPersonStateSetting() == false;
             bool IsPlayerModelCurrentlyVisible = (Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH).gameObject.activeSelf == true) || (Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.activeSelf == true);
-            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
+            bool IsPlayerCrane = IsMyPlayerCrane();
             bool MenuOrPopupVisible = (Data.IsInMenu == true || Data.IsShowingPopup == true);
 
             bool VisibilityMismatch =
@@ -644,14 +653,14 @@ namespace FirstPersonView
 
             CameraState IntendedState = CameraState.ThirdPerson;
 
-            if(IsCameraFirstPerson)
+            if (IsCameraFirstPerson && !IsMyPlayerCrane())
             {
-                IntendedState = CameraState.FirstPerson;    
+                IntendedState = CameraState.FirstPerson;
             }
+            CameraHasBeenSetup = true;
+            FPVLogger.Debug("Camera configuration complete.");
 
             SetCameraState(IntendedState);
-            FPVLogger.Debug("Camera configuration complete.");
-            CameraHasBeenSetup = true;
         }
 
         private void UpdateCameraPosition()
@@ -668,48 +677,57 @@ namespace FirstPersonView
 
         private void ResetFirstPersonCameraInstance()
         {
-            FPVLogger.Debug("Reinstancing First Person View objects.");
             if (Main.FirstPersonCameraObject == null)
             {
                 FPVLogger.Debug("Reinstancing FirstPersonCameraObject.");
                 Main.FirstPersonCameraObject = new GameObject("FPV Camera").AddComponent<Camera>();
+                if(PreferenceHandler.GetFirstPersonStateSetting())
+                {
+                    FPVLogger.Debug("Setting FirstPersonCameraObject to ACTIVE.");
+                    Main.FirstPersonCameraObject.gameObject.SetActive(true);
+                }
+                else
+                {
+                    FPVLogger.Debug("Setting FirstPersonCameraObject to INACTIVE.");
+                    Main.FirstPersonCameraObject.gameObject.SetActive(false);
+                }
             }
 
             if (Main.PlayerGameObject == null)
             {
-                FPVLogger.Debug("Reinstancing FirstPersonPlayerGameObject.");
-                Main.PlayerGameObject = FindPlayerGameObject();
+                FPVLogger.Debug("Reinstancing PlayerGameObject.");
+                Main.PlayerGameObject = GetLocalPlayerGameObject();
             }
+            CameraResetNotProcessed = true;
         }
 
         /// <summary>
-        /// Locates and returns GameObject of the first local player it finds.  Local players are defined as players where <value>player.IsLocalPlayer</value> flat set.
+        /// Gets the player view object associated with the first local player identified.
         /// </summary>
-        /// <returns>The GameObject owned by the first identified local player.</returns>
-        private GameObject FindPlayerGameObject()
+        /// <param name="ForceReload">Forces a recache of the object.</param>
+        /// <returns></returns>
+        private PlayerView GetLocalPlayerView()
         {
-            if(Data.PlayerID == 0)
+            if (Data.PlayerID == 0)
             {
                 return null;
             }
 
-            // Reset this each time.
             Main.LocalPlayers = new Dictionary<PlayerInfo, int>();
-
-            PlayerView[] PlayerViews = UnityEngine.Object.FindObjectsOfType<PlayerView>();
             foreach (PlayerInfo player in Players.Main.All())
             {
-                if(player.IsLocalUser && !Main.LocalPlayers.ContainsKey(player))
+                if (player.IsLocalUser && !Main.LocalPlayers.ContainsKey(player))
                 {
                     Main.LocalPlayers.Add(player, player.ID);
                 }
             }
 
-            if(Main.LocalPlayers.Count == 0)
+            if (Main.LocalPlayers.Count == 0)
             {
                 return null;
             }
 
+            PlayerView[] PlayerViews = UnityEngine.Object.FindObjectsOfType<PlayerView>();
             foreach (KeyValuePair<PlayerInfo, int> player in Main.LocalPlayers)
             {
                 foreach (PlayerView playerView in PlayerViews)
@@ -721,15 +739,48 @@ namespace FirstPersonView
                         Main.PlayerUsername = player.Key.Username;
                         Main.PlayerID = player.Key.ID;
                         Main.PlayerUsernameIDString = player.Key.Username + " (" + player.Key.ID + ")";
-                        FPVLogger.Info("Found player gameObject with name " + Main.PlayerUsernameIDString + ".");
-
-                        return playerView.gameObject;
+                        return playerView;
                     }
                 }
             }
-
-            FPVLogger.Error("Game object could not be found.");
             return null;
+        }
+        
+        /// <summary>
+        /// Locates and returns GameObject of the first local player it finds.  Local players are defined as players where <value>player.IsLocalPlayer</value> flat set.
+        /// </summary>
+        /// <returns>The GameObject owned by the first identified local player.</returns>
+        private GameObject GetLocalPlayerGameObject()
+        {
+            if (Data.PlayerID == 0)
+            {
+                return null;
+            }
+
+            PlayerView playerView = GetLocalPlayerView();
+            if(playerView == null)
+            {
+                FPVLogger.Error("Game object could not be found.");
+                return null;
+            }
+
+            FPVLogger.Info("Found GameObject for player " + Main.PlayerUsernameIDString + ".");
+            return playerView.gameObject;
+        }
+
+        /// <summary>
+        /// Determines whether the player is a crane.
+        /// </summary>
+        /// <returns>Returns boolean true if crane, false otherwise.</returns>
+        private bool IsMyPlayerCrane()
+        {
+            PlayerView playerView = GetLocalPlayerView();
+            if (playerView.GetComponentInChildren<PlayerMovementComponent>().GetType() != typeof(Kitchen.PlayerCraneMovementComponent))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -738,18 +789,13 @@ namespace FirstPersonView
         /// <param name="IntendedCameraState">Intended camera state.</param>
         private void SetCameraState(CameraState IntendedCameraState)
         {
-            int PlayerID = Main.PlayerID; 
-            bool IsPlayerCrane = CranePlayers.ToEntityArray(Allocator.Temp).Length != 0;
-
-            // Make it impossible to use first person if in crane mode.
-            if (IsPlayerCrane)
+            if (Main.FirstPersonCameraObject == null)
             {
-                FPVLogger.Debug("Player is crane, forcing state to false (third-person).");
-                PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
-                IntendedCameraState = CameraState.ThirdPerson;
+                FPVLogger.Debug("Trying to set camera state but camera object is null.");
+                SetupFirstPersonCamera();
             }
 
-            if (Main.FirstPersonCameraObject == null)
+            if(Main.FirstPersonCameraObject != null && !CameraHasBeenSetup)
             {
                 SetupFirstPersonCamera();
             }
