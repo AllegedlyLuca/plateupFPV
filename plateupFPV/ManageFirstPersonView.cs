@@ -580,7 +580,7 @@ namespace FirstPersonView
         /// </summary>
         private void HandleFirstPersonSkybox()
         {
-
+            /// TODO: Create code to manage first person skybox.
         }
         
         /// <summary>
@@ -595,6 +595,16 @@ namespace FirstPersonView
             }
         }
 
+        /// <summary>
+        /// Handles the visibility of the player's model.
+        /// </summary>
+        /// <remarks>
+        /// Player model visibility is determined by a number of different
+        /// factors.  Primary amongst those is whether or not the model
+        /// visibility setting is true or false.  If it is false, this means
+        /// we should hide the player's model while the player is in first
+        /// person mode.
+        /// </remarks>
         private void HandlePlayerModelVisibility()
         {
             if (Main.PlayerGameObject.transform.Find(PLAYER_MODEL_PATH) == null || Main.PlayerGameObject.transform.Find(COSMETICS_PATH) == null)
@@ -636,6 +646,11 @@ namespace FirstPersonView
             }
         }
 
+        /// <summary>
+        /// <summary>
+        /// Handles changing of the player model's visibility.
+        /// </summary>
+        /// <param name="Visibility">true to display player model, false to hide player model.</param>
         private void SetPlayerModelVisibilityGameObject(bool Visibility)
         {
             //FPVLogger.Debug("Setting player model visibility to " + Visibility);
@@ -643,6 +658,19 @@ namespace FirstPersonView
             Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.SetActive(Visibility);
         }
 
+        /// <summary>
+        /// Resets the first person camera in the event that certain parameters are nulled.
+        /// </summary>
+        /// <remarks>
+        /// In cases where the scene transitions between the main
+        /// lobby (Kitchen.SceneType.Franchise) and a restaurant
+        /// (Kitchen.SceneType.kitchen), this class may be reset
+        /// or the class may lose track of the game objects.
+        /// <para>
+        /// If this happens, the game objects this mod relies on
+        /// must be reset before we can do anything else.
+        /// </para>
+        /// </remarks>
         private void ResetFirstPersonCameraInstance()
         {
             if (Main.FirstPersonCameraObject == null)
@@ -671,6 +699,16 @@ namespace FirstPersonView
             }
             CameraResetNotProcessed = true;
         }
+
+        /// <summary>
+        /// Performs setup operations for the first person camera.
+        /// </summary>
+        /// <remarks>
+        /// Before using the first person camera, it needs to be set up
+        /// and its default state configured.  The default state can be
+        /// either of first person or third person, depending on what
+        /// the player's settings are at the time this method is called.
+        /// </remarks>
         private void SetupFirstPersonCamera()
         {
             FPVLogger.Debug("Setting up first person camera.");
@@ -691,6 +729,9 @@ namespace FirstPersonView
             SetCameraState(IntendedState);
         }
 
+        /// <summary>
+        /// Updates the position of the first person camera.
+        /// </summary>
         private void UpdateCameraPosition()
         {
             if (!CameraHasBeenSetup)
@@ -730,10 +771,9 @@ namespace FirstPersonView
         }
 
         /// <summary>
-        /// Gets the player view object associated with the first local player identified.
+        /// Returns the local player's view, or null if there are no local players.
         /// </summary>
-        /// <param name="ForceReload">Forces a recache of the object.</param>
-        /// <returns></returns>
+        /// <returns><i><b>PlayerView</b></i>: The PlayerView object associated with the first local player found.</returns>
         private PlayerView GetLocalPlayerView()
         {
             if (Data.PlayerID == 0)
@@ -775,9 +815,14 @@ namespace FirstPersonView
         }
         
         /// <summary>
-        /// Locates and returns GameObject of the first local player it finds.  Local players are defined as players where <value>player.IsLocalPlayer</value> flat set.
+        /// Locates and returns GameObject of the first local player it finds.
         /// </summary>
-        /// <returns>The GameObject owned by the first identified local player.</returns>
+        /// <remarks>
+        /// Local players are defined as players where the <value>player.IsLocalPlayer</value> value
+        /// has been set inside the <c>PlayerView</c> corresponding to that player.  This is critical to
+        /// proper functioning of the mod, as it can only function on a local player.
+        /// </remarks>
+        /// <returns><i><b>GameObject</b></i>: The GameObject owned by the first identified local player.</returns>
         private GameObject GetLocalPlayerGameObject()
         {
             if (Data.PlayerID == 0)
@@ -814,7 +859,13 @@ namespace FirstPersonView
         /// <summary>
         /// Sets the camera perspective to the indicated state.
         /// </summary>
-        /// <param name="IntendedCameraState">Intended camera state.</param>
+        /// <remarks>
+        /// The camera state change consists of a number of smaller
+        /// operations, primarily those of disabling the mouse cursor
+        /// and activating the first person view.  This method handles
+        /// all of these actions.
+        /// </remarks>
+        /// <param name="IntendedCameraState"><c>CameraState</c> The intended camera state.</param>
         private void SetCameraState(CameraState IntendedCameraState)
         {
             if (Main.FirstPersonCameraObject == null)
