@@ -56,11 +56,8 @@ Note: All file and directory names are case sensitive.  Ensure folders and files
 
 ## Issues
 
-* Most UI indicators do not look at the player in first person.  Those that do, may focus on another player if you are in a multiplayer lobby.
-* Multiplayer specific:
-  * If the lobby host enters crane mode, first person mode is disabled for all players.
-  * If a non-host player enters crane mode, first person does not disable properly.
-* Unconfirmed: A restaurant failing may cause a game crash.
+* Most UI indicators do not look at the player in first person.  Those that do focus the player closest to the back of the restaurant.
+* Unconfirmed: A restaurant failing may cause a game crash for non-host players.
 
 ## Who am I?
 

@@ -6,14 +6,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-/*
- * TODO:
- * - Figure why crane toggles again (object reference error in log).
- * - fix above.  Priority.
- * 
- *
- */
-
 namespace FirstPersonView
 {
     public class Main : BaseMod, IModSystem
@@ -34,7 +26,6 @@ namespace FirstPersonView
         internal static int PlayerID = 0;
         internal static string PlayerUsername = null;
         internal static string PlayerUsernameIDString = null;
-        internal static PlayerView LocalPlayerView;
         internal static IDictionary<PlayerInfo, int> LocalPlayers = new Dictionary<PlayerInfo, int>();
 
         internal static Material OriginalSkybox;
