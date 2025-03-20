@@ -44,6 +44,8 @@ namespace FirstPersonView
         private bool IsPlayerMoving = false;
         private bool FPVDisabledViaMenu = false;
 
+        private bool ObjectNotFoundWarningShown = false;
+
         private float CurrentLookVertical = 0f;
 
         // TODO: Work out what this is for.
@@ -226,7 +228,7 @@ namespace FirstPersonView
 
             this.Data = data;
 
-            FPVLogger.Debug("Main.PlayerID, data.PlayerID, data.IsInitialised: " + Main.PlayerID + ", " + data.PlayerID + ", " + data.IsInitialised);
+            FPVLogger.Debug("Received UpdateData data: Main.PlayerID, data.PlayerID, data.IsInitialised: " + Main.PlayerID + ", " + data.PlayerID + ", " + data.IsInitialised);
 
             if (!data.IsInitialised && Callback != null && Main.PlayerID == 0)
             {
@@ -298,22 +300,25 @@ namespace FirstPersonView
             #region Enable or disable FPV
             if (Main.PlayerGameObject == null || Main.FirstPersonCameraObject == null)
             {
-                if (Main.PlayerGameObject == null)
+                if (Main.PlayerGameObject == null && !ObjectNotFoundWarningShown)
                 {
                     FPVLogger.Warn("PlayerGameObject is not set.  Attempting to fix.");
                 }
 
-                if (Main.FirstPersonCameraObject == null)
+                if (Main.FirstPersonCameraObject == null && !ObjectNotFoundWarningShown)
                 {
                     FPVLogger.Warn("FirstPersonCameraObject is not set.  Attempting to fix.");
                 }
-                
+
                 ResetFirstPersonCameraInstance();
                 if (Main.PlayerGameObject == null || Main.FirstPersonCameraObject == null)
                 {
                     FPVLogger.Error("Attempt to reset missing object failed.");
+                    FPVLogger.Error("This error will not be shown again until the missing object has been found.");
+                    ObjectNotFoundWarningShown = true;
                     return;
                 }
+                ObjectNotFoundWarningShown = false;
                 FPVLogger.Info("Successfully fixed objects not set.");
             }
 
@@ -351,8 +356,6 @@ namespace FirstPersonView
             bool IsMyPlayerCraneBool = IsMyPlayerCrane();
             if(IsMyPlayerCraneBool == true)
             {
-                FPVLogger.Debug("GetFirstPersonStateSetting(): " + PreferenceHandler.GetFirstPersonStateSetting());
-                FPVLogger.Debug("IsCameraFirstPerson: " + IsCameraFirstPerson);
                 if (PreferenceHandler.GetFirstPersonStateSetting() == true || IsCameraFirstPerson == true)
                 {
                     FPVLogger.Debug("Player is a crane.  Disabling first person view.");
@@ -647,6 +650,20 @@ namespace FirstPersonView
         }
 
         /// <summary>
+        /// Determines whether the player is a crane.
+        /// </summary>
+        /// <returns><i><b>bool</b></i>: true if crane, false otherwise.</returns>
+        private bool IsMyPlayerCrane()
+        {
+            PlayerView playerView = GetLocalPlayerView();
+            if (playerView.GetComponentInChildren<PlayerMovementComponent>().GetType() != typeof(Kitchen.PlayerCraneMovementComponent))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Handles changing of the player model's visibility.
         /// </summary>
@@ -724,7 +741,7 @@ namespace FirstPersonView
                 IntendedState = CameraState.FirstPerson;
             }
             CameraHasBeenSetup = true;
-            FPVLogger.Debug("Camera configuration complete.");
+            FPVLogger.Debug("Camera setup complete.");
 
             SetCameraState(IntendedState);
         }
@@ -742,32 +759,6 @@ namespace FirstPersonView
             Main.FirstPersonCameraObject.transform.parent = Main.PlayerGameObject.transform;
             Vector3 PlayerPositionAndRotation = new Vector3(Main.PlayerGameObject.transform.position.x, Main.PlayerGameObject.transform.position.y + 1f, Main.PlayerGameObject.transform.position.z);
             Main.FirstPersonCameraObject.transform.SetPositionAndRotation(PlayerPositionAndRotation, Main.PlayerGameObject.transform.rotation);
-        }
-
-        private void ResetFirstPersonCameraInstance()
-        {
-            if (Main.FirstPersonCameraObject == null)
-            {
-                FPVLogger.Debug("Reinstancing FirstPersonCameraObject.");
-                Main.FirstPersonCameraObject = new GameObject("FPV Camera").AddComponent<Camera>();
-                if(PreferenceHandler.GetFirstPersonStateSetting())
-                {
-                    FPVLogger.Debug("Setting FirstPersonCameraObject to ACTIVE.");
-                    Main.FirstPersonCameraObject.gameObject.SetActive(true);
-                }
-                else
-                {
-                    FPVLogger.Debug("Setting FirstPersonCameraObject to INACTIVE.");
-                    Main.FirstPersonCameraObject.gameObject.SetActive(false);
-                }
-            }
-
-            if (Main.PlayerGameObject == null)
-            {
-                FPVLogger.Debug("Reinstancing PlayerGameObject.");
-                Main.PlayerGameObject = GetLocalPlayerGameObject();
-            }
-            CameraResetNotProcessed = true;
         }
 
         /// <summary>
@@ -813,7 +804,7 @@ namespace FirstPersonView
             }
             return null;
         }
-        
+
         /// <summary>
         /// Locates and returns GameObject of the first local player it finds.
         /// </summary>
@@ -833,27 +824,15 @@ namespace FirstPersonView
             PlayerView playerView = GetLocalPlayerView();
             if(playerView == null)
             {
-                FPVLogger.Error("Game object could not be found.");
+                if (!ObjectNotFoundWarningShown)
+                {
+                    FPVLogger.Error("Game object could not be found.");
+                }
                 return null;
             }
 
             FPVLogger.Info("Found GameObject for player " + Main.PlayerUsernameIDString + ".");
             return playerView.gameObject;
-        }
-
-        /// <summary>
-        /// Determines whether the player is a crane.
-        /// </summary>
-        /// <returns>Returns boolean true if crane, false otherwise.</returns>
-        private bool IsMyPlayerCrane()
-        {
-            PlayerView playerView = GetLocalPlayerView();
-            if (playerView.GetComponentInChildren<PlayerMovementComponent>().GetType() != typeof(Kitchen.PlayerCraneMovementComponent))
-            {
-                return false;
-            }
-
-            return true;
         }
 
         /// <summary>
