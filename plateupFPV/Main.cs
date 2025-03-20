@@ -21,7 +21,8 @@ namespace FirstPersonView
         internal const string modID = "com.allegedlyluca.plateupfpv";
         private const string modName = "First Person View";
         private const string author = "AllegedlyLuca";
-        private const string modVersion = "0.1.0";
+        private static readonly string modVersion = typeof(FirstPersonView.Main).Assembly.GetName().Version.ToString();
+        // compatibleVersions refers to the version of PlateUp! the mod is intended to work with!
         private const string compatibleVersions = ">=1.1.4";
 
         internal static int PlayerSource = 0;
@@ -43,7 +44,7 @@ namespace FirstPersonView
         protected override void OnInitialise()
         {
             ManageControls.SetInitialInputSource();
-            FPVLogger.Info("Initialisation complete!");
+            FPVLogger.Info("Initialisation complete for First Player View v"+ modVersion +"!");
         }
 
         protected override void OnUpdate()
