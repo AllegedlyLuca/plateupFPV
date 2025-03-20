@@ -643,6 +643,34 @@ namespace FirstPersonView
             Main.PlayerGameObject.transform.Find(COSMETICS_PATH).gameObject.SetActive(Visibility);
         }
 
+        private void ResetFirstPersonCameraInstance()
+        {
+            if (Main.FirstPersonCameraObject == null)
+            {
+                FPVLogger.Debug("Reinstancing FirstPersonCameraObject.");
+                Main.FirstPersonCameraObject = new GameObject("FPV Camera").AddComponent<Camera>();
+                if (PreferenceHandler.GetFirstPersonStateSetting())
+                {
+                    FPVLogger.Debug("Setting FirstPersonCameraObject to ACTIVE.");
+                    Main.FirstPersonCameraObject.gameObject.SetActive(true);
+                }
+                else
+                {
+                    FPVLogger.Debug("Setting FirstPersonCameraObject to INACTIVE.");
+                    Main.FirstPersonCameraObject.gameObject.SetActive(false);
+                }
+            }
+
+            if (Main.PlayerGameObject == null)
+            {
+                if (!ObjectNotFoundWarningShown)
+                {
+                    FPVLogger.Debug("Reinstancing PlayerGameObject.");
+                }
+                Main.PlayerGameObject = GetLocalPlayerGameObject();
+            }
+            CameraResetNotProcessed = true;
+        }
         private void SetupFirstPersonCamera()
         {
             FPVLogger.Debug("Setting up first person camera.");
