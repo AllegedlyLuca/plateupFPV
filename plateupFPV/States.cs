@@ -21,4 +21,10 @@
         ThirdPerson = 0,
         FirstPerson = 1
     }
+
+    internal enum SkyboxState
+    {
+        NativeSkybox = 0,
+        FirstPersonSkybox = 1
+    }
 }

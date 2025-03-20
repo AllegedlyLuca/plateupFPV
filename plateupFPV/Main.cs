@@ -37,6 +37,8 @@ namespace FirstPersonView
         internal static PlayerView LocalPlayerView;
         internal static IDictionary<PlayerInfo, int> LocalPlayers = new Dictionary<PlayerInfo, int>();
 
+        internal static Material OriginalSkybox;
+
         public static AssetBundle Bundle;
 
         public Main() : base(modID, modName, author, modVersion, compatibleVersions, Assembly.GetExecutingAssembly()) { }

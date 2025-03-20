@@ -49,7 +49,7 @@ namespace FirstPersonView
         private float CurrentLookVertical = 0f;
 
         // TODO: Work out what this is for.
-        private readonly int NightFade = Shader.PropertyToID("_NightFade");
+        private Material FirstPersonSkybox;
 
         [SerializeField]
         private Animator FirstPersonAnimator;
@@ -429,7 +429,6 @@ namespace FirstPersonView
             HandleFirstPersonMovement();
             HandleFirstPersonAnimator();
             HandleFirstPersonHoldPoints();
-            HandleFirstPersonSkybox();
             HandlePlayerModelVisibility();
         }
 
@@ -444,6 +443,7 @@ namespace FirstPersonView
             SetCameraState(CameraState.FirstPerson);
             ManageControls.SetControlState(ControlState.FirstPerson);
             FirstPersonUpdate();
+            SetSkybox(SkyboxState.FirstPersonSkybox);
             CameraResetNotProcessed = false;
             FPVLogger.Info("Enabled first person view.");
         }
@@ -457,6 +457,7 @@ namespace FirstPersonView
             FPVLogger.Debug("<- Routing.");
             PreferenceHandler.SetFirstPersonStateSetting(CameraState.ThirdPerson);
             SetCameraState(CameraState.ThirdPerson);
+            SetSkybox(SkyboxState.NativeSkybox);
             HandlePlayerModelVisibility();
             ManageControls.SetControlState(ControlState.ThirdPerson);
             CameraResetNotProcessed = false;
@@ -578,12 +579,28 @@ namespace FirstPersonView
             Main.PlayerGameObject.transform.Rotate(Vector3.up * LookHorizontal);
         }
 
-        /// <summary>
-        /// Handles the apprearance of the Skybox in first person.  Without this, the skybox is always black.
-        /// </summary>
-        private void HandleFirstPersonSkybox()
+        // Code adapted from parts of code in https://github.com/quackandcheese/plateupFPV/blob/main/plateupFPV/SetFPV.cs
+        private void SetSkybox(SkyboxState state)
         {
-            /// TODO: Create code to manage first person skybox.
+            if(Main.OriginalSkybox == null)
+            {
+                Main.OriginalSkybox = RenderSettings.skybox;
+            }
+
+            if (state == SkyboxState.NativeSkybox && Main.OriginalSkybox != null)
+            {
+                RenderSettings.skybox = Main.OriginalSkybox;
+            }
+
+            if(state == SkyboxState.FirstPersonSkybox)
+            {
+                FirstPersonSkybox = new Material(Shader.Find("Skybox/Procedural"));
+                FirstPersonSkybox.SetColor("_SkyTint", new Color(1.5f, 0.5f, 1f));
+                FirstPersonSkybox.SetFloat("_SunSize", 0.04f);
+                FirstPersonSkybox.SetFloat("_AtmosphereThickness", 1f);
+                FirstPersonSkybox = Resources.Load<Material>("Skybox/Blue Sky");
+                RenderSettings.skybox = FirstPersonSkybox;
+            }
         }
         
         /// <summary>
@@ -694,6 +711,7 @@ namespace FirstPersonView
             {
                 FPVLogger.Debug("Reinstancing FirstPersonCameraObject.");
                 Main.FirstPersonCameraObject = new GameObject("FPV Camera").AddComponent<Camera>();
+                Main.FirstPersonCameraObject.clearFlags = CameraClearFlags.Skybox;
                 if (PreferenceHandler.GetFirstPersonStateSetting())
                 {
                     FPVLogger.Debug("Setting FirstPersonCameraObject to ACTIVE.");
